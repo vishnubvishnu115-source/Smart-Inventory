@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "targets": [
+      "smart_inventory"
+    ],
+    "ignore": [],
+    "source": "functions"
+  },
+  "slate": [
+    {
+      "name": "scanner-ui",
+      "source": "C:/Users/Vishnu/.gemini/antigravity/scratch/SmartInventorySystem/client"
+    }
+  ]
+}

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Smart Inventory & Stock Replenishment Agent</title>
+	<style>
+		:root {
+			--bg: #0f1419;
+			--panel: #161d24;
+			--panel-2: #1c252f;
+			--border: #2a3644;
+			--text: #eef3f8;
+			--muted: #93a4b7;
+			--accent: #22c55e;
+			--accent-dim: rgba(34, 197, 94, 0.14);
+			--warn: #f59e0b;
+			--warn-dim: rgba(245, 158, 11, 0.14);
+			--danger: #ef4444;
+			--danger-dim: rgba(239, 68, 68, 0.15);
+			--info: #38bdf8;
+			--mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+			--sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			font-family: var(--sans);
+			background: radial-gradient(circle at top right, #172330 0%, var(--bg) 55%);
+			color: var(--text);
+			line-height: 1.45;
+		}
+		.shell {
+			max-width: 1180px;
+			margin: 0 auto;
+			padding: 24px 20px 44px;
+		}
+		.topbar {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 22px;
+			padding-bottom: 16px;
+			border-bottom: 1px solid var(--border);
+		}
+		.brand h1 {
+			margin: 0;
+			font-size: 1.35rem;
+			letter-spacing: -0.02em;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		.brand p {
+			margin: 4px 0 0;
+			font-size: 0.88rem;
+			color: var(--muted);
+		}
+		.badges {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		.badge {
+			font-family: var(--mono);
+			font-size: 0.74rem;
+			padding: 5px 10px;
+			border-radius: 999px;
+			border: 1px solid var(--border);
+			background: var(--panel);
+			color: var(--muted);
+		}
+		.badge.ok {
+			color: #86efac;
+			border-color: rgba(34, 197, 94, 0.35);
+			background: var(--accent-dim);
+		}
+		.badge.warn {
+			color: #fcd34d;
+			border-color: rgba(245, 158, 11, 0.35);
+			background: var(--warn-dim);
+		}
+		.grid {
+			display: grid;
+			grid-template-columns: 420px 1fr;
+			gap: 20px;
+			align-items: start;
+		}
+		@media (max-width: 920px) {
+			.grid { grid-template-columns: 1fr; }
+		}
+		.card {
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			padding: 20px;
+		}
+		.card-title {
+			margin: 0 0 14px;
+			font-size: 0.85rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: var(--muted);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+		label {
+			display: block;
+			font-size: 0.82rem;
+			font-weight: 600;
+			color: var(--muted);
+			margin-bottom: 6px;
+		}
+		.sku-box {
+			position: relative;
+			background: #0a0e13;
+			border: 2px solid #2e4054;
+			border-radius: 12px;
+			padding: 12px 16px;
+			margin-bottom: 10px;
+			transition: border-color 0.15s ease;
+		}
+		.sku-box:focus-within {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+		}
+		.sku-hint-row {
+			display: flex;
+			justify-content: space-between;
+			font-family: var(--mono);
+			font-size: 0.72rem;
+			color: #6b8096;
+			margin-bottom: 4px;
+		}
+		.sku-input {
+			width: 100%;
+			background: transparent;
+			border: 0;
+			outline: none;
+			color: #f8fafc;
+			font-family: var(--mono);
+			font-size: 2.5rem;
+			font-weight: 700;
+			letter-spacing: 0.35em;
+			text-align: center;
+		}
+		.sku-input::placeholder { color: #314254; }
+		.chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-bottom: 16px;
+		}
+		.chip {
+			cursor: pointer;
+			font-family: var(--mono);
+			font-size: 0.76rem;
+			padding: 5px 10px;
+			border-radius: 8px;
+			border: 1px solid var(--border);
+			background: var(--panel-2);
+			color: var(--text);
+		}
+		.chip:hover { border-color: var(--info); }
+		.preview-strip {
+			background: var(--panel-2);
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			padding: 12px;
+			margin-bottom: 16px;
+			font-size: 0.86rem;
+		}
+		.preview-strip .muted { color: var(--muted); }
+		.row-split {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 10px;
+			align-items: end;
+			margin-bottom: 14px;
+		}
+		input[type="number"], input[type="email"] {
+			width: 100%;
+			padding: 10px 12px;
+			border-radius: 9px;
+			border: 1px solid var(--border);
+			background: #0b1015;
+			color: var(--text);
+			font-size: 0.98rem;
+			font-family: var(--sans);
+		}
+		input[type="number"]:focus, input[type="email"]:focus {
+			outline: none;
+			border-color: var(--info);
+		}
+		.qty-quick {
+			display: flex;
+			gap: 6px;
+		}
+		.btn {
+			cursor: pointer;
+			border: 1px solid var(--border);
+			background: var(--panel-2);
+			color: var(--text);
+			font-family: var(--sans);
+			font-weight: 600;
+			font-size: 0.88rem;
+			padding: 10px 14px;
+			border-radius: 9px;
+			transition: transform 0.08s ease, opacity 0.15s ease, border-color 0.15s ease;
+		}
+		.btn:hover:not(:disabled) { border-color: #4a5f75; }
+		.btn:active:not(:disabled) { transform: translateY(1px); }
+		.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+		.btn-primary {
+			width: 100%;
+			background: var(--accent);
+			color: #052e16;
+			border-color: transparent;
+			font-size: 1rem;
+			padding: 12px 16px;
+		}
+		.btn-sm {
+			padding: 6px 10px;
+			font-size: 0.78rem;
+		}
+		.checkbox-row {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 12px 0 16px;
+			font-size: 0.84rem;
+			color: var(--muted);
+			cursor: pointer;
+		}
+		.checkbox-row input { width: 16px; height: 16px; accent-color: var(--accent); }
+		.status-banner {
+			margin-top: 12px;
+			padding: 10px 12px;
+			border-radius: 9px;
+			font-size: 0.85rem;
+			display: none;
+		}
+		.status-banner.error {
+			display: block;
+			background: var(--danger-dim);
+			border: 1px solid rgba(239, 68, 68, 0.45);
+			color: #fecaca;
+		}
+		.status-banner.success {
+			display: block;
+			background: var(--accent-dim);
+			border: 1px solid rgba(34, 197, 94, 0.4);
+			color: #bbf7d0;
+		}
+		.stack { display: flex; flex-direction: column; gap: 20px; }
+		.agent-empty {
+			color: var(--muted);
+			font-size: 0.92rem;
+			padding: 14px 0;
+		}
+		.decision-box {
+			border-radius: 10px;
+			padding: 14px;
+			border: 1px solid var(--border);
+			background: var(--panel-2);
+			margin-bottom: 14px;
+		}
+		.decision-box.alert {
+			border-color: rgba(245, 158, 11, 0.5);
+			background: var(--warn-dim);
+		}
+		.decision-box.ok {
+			border-color: rgba(34, 197, 94, 0.4);
+			background: var(--accent-dim);
+		}
+		.decision-headline {
+			font-weight: 700;
+			font-size: 0.98rem;
+			margin-bottom: 4px;
+		}
+		.email-card {
+			border: 1px solid var(--border);
+			background: #0b1015;
+			border-radius: 10px;
+			overflow: hidden;
+		}
+		.email-meta {
+			padding: 12px 14px;
+			border-bottom: 1px solid var(--border);
+			font-size: 0.84rem;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.email-meta span { color: var(--muted); margin-right: 6px; }
+		.email-body {
+			margin: 0;
+			padding: 14px;
+			font-family: var(--sans);
+			font-size: 0.88rem;
+			white-space: pre-wrap;
+			color: #e2e8f0;
+		}
+		.email-actions {
+			padding: 10px 14px;
+			border-top: 1px solid var(--border);
+			background: var(--panel-2);
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			font-size: 0.8rem;
+			color: var(--muted);
+		}
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 0.86rem;
+		}
+		th, td {
+			text-align: left;
+			padding: 10px 8px;
+			border-bottom: 1px solid var(--border);
+		}
+		th {
+			font-size: 0.75rem;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			color: var(--muted);
+		}
+		.mono { font-family: var(--mono); }
+		.pill {
+			display: inline-block;
+			font-size: 0.72rem;
+			font-weight: 600;
+			padding: 2px 8px;
+			border-radius: 999px;
+		}
+		.pill.low { background: var(--warn-dim); color: #fcd34d; }
+		.pill.ok { background: var(--accent-dim); color: #86efac; }
+		.table-wrap { overflow-x: auto; }
+	</style>
+</head>
+<body>
+	<main class="shell">
+		<header class="topbar">
+			<div class="brand">
+				<h1>Smart Inventory &amp; Replenishment Agent</h1>
+				<p>3-Digit SKU Barcode Scanner · Zoho Catalyst Data Store + Replenishment Agent</p>
+			</div>
+			<div class="badges">
+				<span id="connBadge" class="badge">Connecting...</span>
+				<span id="aiBadge" class="badge">Draft Engine: Checking</span>
+				<span id="mailBadge" class="badge">Catalyst Mail: Checking</span>
+			</div>
+		</header>
+
+		<div class="grid">
+			<section class="card">
+				<h2 class="card-title">
+					<span>Scanner Terminal</span>
+					<span class="mono">3-DIGIT SKU</span>
+				</h2>
+
+				<form id="scanForm">
+					<label for="skuInput">Product SKU Code</label>
+					<div class="sku-box">
+						<div class="sku-hint-row">
+							<span>SCANNER INPUT</span>
+							<span>ENTER 3 DIGITS</span>
+						</div>
+						<input
+							id="skuInput"
+							class="sku-input"
+							type="text"
+							inputmode="numeric"
+							maxlength="3"
+							placeholder="401"
+							autocomplete="off"
+							required
+							autofocus
+						/>
+					</div>
+
+					<div id="quickChips" class="chips"></div>
+
+					<div id="previewStrip" class="preview-strip">
+						<span class="muted">Type or select a 3-digit SKU to preview live stock.</span>
+					</div>
+
+					<div class="row-split">
+						<div>
+							<label for="qtyInput">Units Sold</label>
+							<input id="qtyInput" type="number" min="1" step="1" value="5" required />
+						</div>
+						<div class="qty-quick">
+							<button type="button" class="btn btn-sm qty-preset" data-qty="1">1</button>
+							<button type="button" class="btn btn-sm qty-preset" data-qty="5">5</button>
+							<button type="button" class="btn btn-sm qty-preset" data-qty="10">10</button>
+						</div>
+					</div>
+
+					<label for="overrideEmailInput">Override Supplier Email (optional for testing)</label>
+					<input id="overrideEmailInput" type="email" placeholder="Leave blank to use product's SupplierEmail" />
+
+					<label class="checkbox-row">
+						<input id="sendLiveCheckbox" type="checkbox" checked />
+						<span>Attempt live send via Catalyst Mail when reorder triggers</span>
+					</label>
+
+					<button id="submitBtn" type="submit" class="btn btn-primary">Log Sale &amp; Check Stock</button>
+					<div id="formBanner" class="status-banner"></div>
+				</form>
+			</section>
+
+			<div class="stack">
+				<section class="card">
+					<h2 class="card-title">
+						<span>Agent Decision &amp; Restock Notice</span>
+						<span id="decisionTag" class="mono">READY</span>
+					</h2>
+					<div id="agentOutput">
+						<div class="agent-empty">
+							Scan a SKU (for example, <strong>401</strong> with <strong>5</strong> units sold) to deduct stock and trigger the replenishment agent when stock hits or drops below <code>ReorderLevel</code>.
+						</div>
+					</div>
+				</section>
+
+				<section class="card">
+					<h2 class="card-title">
+						<span>Live Catalyst Data Store (`Products`)</span>
+						<button id="refreshBtn" type="button" class="btn btn-sm">Refresh</button>
+					</h2>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>SKU</th>
+									<th>Item Name</th>
+									<th>Stock</th>
+									<th>Reorder &le;</th>
+									<th>Status</th>
+									<th>Supplier</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="productsBody">
+								<tr><td colspan="7" class="mono">Loading products...</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+		</div>
+	</main>
+
+	<script>
+		const PROD_API_BASE = 'https://smartinventorysystem-60095756559.development.catalystserverless.in/server/smart_inventory/execute';
+		const LOCAL_API_BASE = 'http://localhost:3000/server/smart_inventory/execute';
+		const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+		const API_BASE = isLocalhost ? LOCAL_API_BASE : PROD_API_BASE;
+
+		const state = { products: [], capabilities: {} };
+
+		const skuInput = document.getElementById('skuInput');
+		const qtyInput = document.getElementById('qtyInput');
+		const overrideEmailInput = document.getElementById('overrideEmailInput');
+		const sendLiveCheckbox = document.getElementById('sendLiveCheckbox');
+		const submitBtn = document.getElementById('submitBtn');
+		const formBanner = document.getElementById('formBanner');
+		const previewStrip = document.getElementById('previewStrip');
+		const quickChips = document.getElementById('quickChips');
+		const productsBody = document.getElementById('productsBody');
+		const agentOutput = document.getElementById('agentOutput');
+		const decisionTag = document.getElementById('decisionTag');
+		const connBadge = document.getElementById('connBadge');
+		const aiBadge = document.getElementById('aiBadge');
+		const mailBadge = document.getElementById('mailBadge');
+
+		function escapeHtml(text) {
+			return String(text ?? '')
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;');
+		}
+
+		function showBanner(type, msg) {
+			formBanner.className = `status-banner ${type}`;
+			formBanner.textContent = msg;
+		}
+
+		function clearBanner() {
+			formBanner.className = 'status-banner';
+			formBanner.textContent = '';
+		}
+
+		function updateCapabilityBadges(caps) {
+			state.capabilities = caps || {};
+			connBadge.textContent = 'Catalyst: Connected';
+			connBadge.className = 'badge ok';
+
+			aiBadge.textContent = caps?.llmConfigured ? 'Draft Engine: LLM Active' : 'Draft Engine: Smart Template';
+			aiBadge.className = 'badge ok';
+
+			mailBadge.textContent = caps?.liveMailConfigured ? 'Catalyst Mail: Sender Set' : 'Catalyst Mail: Draft Only';
+			mailBadge.className = caps?.liveMailConfigured ? 'badge ok' : 'badge warn';
+		}
+
+		function updatePreview() {
+			const sku = skuInput.value.trim();
+			const sold = Number(qtyInput.value || 0);
+			const match = state.products.find((p) => p.sku === sku);
+			if (!match) {
+				previewStrip.innerHTML = sku.length === 3
+					? `<span style="color:#fca5a5;">SKU <strong>${escapeHtml(sku)}</strong> not found in Products table.</span>`
+					: `<span class="muted">Type or select a 3-digit SKU to preview live stock.</span>`;
+				return;
+			}
+			const projected = match.stockCount - sold;
+			const willReorder = projected <= match.reorderLevel;
+			previewStrip.innerHTML = `
+				<strong>${escapeHtml(match.itemName)}</strong> (SKU <span class="mono">${escapeHtml(match.sku)}</span>)<br/>
+				<span class="muted">Current:</span> <strong>${match.stockCount}</strong> &middot;
+				<span class="muted">Reorder &le;</span> <strong>${match.reorderLevel}</strong> &middot;
+				<span class="muted">After sale:</span>
+				<strong style="color:${projected < 0 ? '#fca5a5' : willReorder ? '#fcd34d' : '#86efac'}">
+					${projected}${willReorder && projected >= 0 ? ' (Will trigger reorder)' : ''}
+				</strong>
+			`;
+		}
+
+		function renderProducts() {
+			quickChips.innerHTML = state.products
+				.map((p) => `<button type="button" class="chip" data-sku="${escapeHtml(p.sku)}">${escapeHtml(p.sku)} &middot; ${escapeHtml(p.itemName)}</button>`)
+				.join('');
+
+			if (!state.products.length) {
+				productsBody.innerHTML = '<tr><td colspan="7">No products found in Data Store.</td></tr>';
+				return;
+			}
+
+			productsBody.innerHTML = state.products.map((p) => {
+				const isLow = p.stockCount <= p.reorderLevel;
+				return `
+					<tr>
+						<td class="mono"><strong>${escapeHtml(p.sku)}</strong></td>
+						<td>${escapeHtml(p.itemName)}</td>
+						<td class="mono"><strong>${p.stockCount}</strong></td>
+						<td class="mono">${p.reorderLevel}</td>
+						<td><span class="pill ${isLow ? 'low' : 'ok'}">${isLow ? 'Low Stock' : 'Healthy'}</span></td>
+						<td style="color:var(--muted);">${escapeHtml(p.supplierEmail)}</td>
+						<td><button type="button" class="btn btn-sm restock-btn" data-sku="${escapeHtml(p.sku)}">+50</button></td>
+					</tr>
+				`;
+			}).join('');
+
+			updatePreview();
+		}
+
+		function renderAgentResult(data) {
+			const { sale, agentDecision, emailDraft, mailDelivery } = data;
+			decisionTag.textContent = agentDecision.needsReorder ? 'REORDER TRIGGERED' : 'STOCK HEALTHY';
+
+			let html = `
+				<div class="decision-box ${agentDecision.needsReorder ? 'alert' : 'ok'}">
+					<div class="decision-headline">
+						SKU ${escapeHtml(sale.sku)} &mdash; ${escapeHtml(sale.itemName)}: ${sale.previousStock} &rarr; ${sale.newStock} units (-${sale.soldQty})
+					</div>
+					<div>${escapeHtml(agentDecision.reason)}</div>
+				</div>
+			`;
+
+			if (emailDraft) {
+				const mailtoHref = `mailto:${encodeURIComponent(emailDraft.to)}?subject=${encodeURIComponent(emailDraft.subject)}&body=${encodeURIComponent(emailDraft.body)}`;
+				html += `
+					<div class="email-card">
+						<div class="email-meta">
+							<div><span>To:</span><strong>${escapeHtml(emailDraft.to)}</strong></div>
+							<div><span>Subject:</span><strong>${escapeHtml(emailDraft.subject)}</strong></div>
+							<div><span>Generator:</span><span class="mono">${escapeHtml(emailDraft.generator)}</span></div>
+						</div>
+						<pre id="draftBodyText" class="email-body">${escapeHtml(emailDraft.body)}</pre>
+						<div class="email-actions">
+							<span>${escapeHtml(mailDelivery?.note || '')}</span>
+							<div style="display:flex; gap:8px;">
+								<button type="button" id="copyDraftBtn" class="btn btn-sm">Copy Draft</button>
+								<a href="${mailtoHref}" class="btn btn-sm" style="text-decoration:none;">Open Mail Client</a>
+							</div>
+						</div>
+					</div>
+				`;
+			}
+
+			agentOutput.innerHTML = html;
+
+			const copyBtn = document.getElementById('copyDraftBtn');
+			if (copyBtn && emailDraft) {
+				copyBtn.addEventListener('click', async () => {
+					await navigator.clipboard.writeText(`Subject: ${emailDraft.subject}\n\n${emailDraft.body}`);
+					copyBtn.textContent = 'Copied!';
+					setTimeout(() => { copyBtn.textContent = 'Copy Draft'; }, 1500);
+				});
+			}
+		}
+
+		async function fetchProducts() {
+			try {
+				const res = await fetch(`${API_BASE}/products`);
+				const data = await res.json();
+				if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to load products');
+				state.products = data.products || [];
+				updateCapabilityBadges(data.capabilities);
+				renderProducts();
+			} catch (err) {
+				connBadge.textContent = 'Catalyst: Error';
+				connBadge.className = 'badge warn';
+				productsBody.innerHTML = `<tr><td colspan="7" style="color:#fca5a5;">${escapeHtml(err.message)}</td></tr>`;
+			}
+		}
+
+		async function restockSku(sku) {
+			clearBanner();
+			try {
+				const res = await fetch(`${API_BASE}/restock`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ sku, addQty: 50 })
+				});
+				const data = await res.json();
+				if (!res.ok || !data.ok) throw new Error(data.error || 'Restock failed');
+				state.products = data.products || [];
+				renderProducts();
+				showBanner('success', `Restocked SKU ${sku} (+50 units). New stock: ${data.restocked.newStock}.`);
+			} catch (err) {
+				showBanner('error', err.message);
+			}
+		}
+
+		skuInput.addEventListener('input', () => {
+			skuInput.value = skuInput.value.replace(/\D/g, '').slice(0, 3);
+			updatePreview();
+		});
+		qtyInput.addEventListener('input', updatePreview);
+
+		quickChips.addEventListener('click', (e) => {
+			const chip = e.target.closest('[data-sku]');
+			if (!chip) return;
+			skuInput.value = chip.dataset.sku;
+			updatePreview();
+			qtyInput.focus();
+		});
+
+		document.querySelectorAll('.qty-preset').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				qtyInput.value = btn.dataset.qty;
+				updatePreview();
+			});
+		});
+
+		productsBody.addEventListener('click', (e) => {
+			const btn = e.target.closest('.restock-btn');
+			if (btn) restockSku(btn.dataset.sku);
+		});
+
+		document.getElementById('refreshBtn').addEventListener('click', fetchProducts);
+
+		document.getElementById('scanForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			clearBanner();
+			const sku = skuInput.value.trim();
+			const soldQty = Number(qtyInput.value);
+			const recipientOverride = overrideEmailInput.value.trim();
+
+			submitBtn.disabled = true;
+			submitBtn.textContent = 'Processing Scan...';
+			try {
+				const res = await fetch(`${API_BASE}/log-sale`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						sku,
+						soldQty,
+						sendEmail: sendLiveCheckbox.checked,
+						recipientOverride: recipientOverride || undefined
+					})
+				});
+				const data = await res.json();
+				if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to log sale');
+				state.products = data.products || [];
+				renderProducts();
+				renderAgentResult(data);
+				showBanner('success', `Logged ${soldQty} unit(s) sold for SKU ${sku}.`);
+			} catch (err) {
+				showBanner('error', err.message);
+			} finally {
+				submitBtn.disabled = false;
+				submitBtn.textContent = 'Log Sale & Check Stock';
+			}
+		});
+
+		fetchProducts();
+	</script>
+</body>
+</html>
+

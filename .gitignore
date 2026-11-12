@@ -1,0 +1,6 @@
+node_modules/
+.catalystrc
+.env
+.env.*
+*.log
+

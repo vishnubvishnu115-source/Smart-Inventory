@@ -1,0 +1,11 @@
+{
+	"name": "smart_inventory",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "vishnubvishnu115@gmail.com",
+	"dependencies": {
+		"@zcatalyst/auth": "latest",
+		"@zcatalyst/cache": "latest",
+		"zcatalyst-sdk-node": "^3.4.0"
+	}
+}

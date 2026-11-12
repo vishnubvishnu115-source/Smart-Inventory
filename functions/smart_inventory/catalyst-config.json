@@ -1,7 +1,7 @@
 {
 	"deployment": {
 		"name": "smart_inventory",
-		"stack": "node20",
+		"stack": "node24",
 		"type": "advancedio",
 		"env_variables": {}
 	},

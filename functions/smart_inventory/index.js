@@ -198,11 +198,15 @@ async function authenticateAppUser(req) {
 		if (!currentUser || !currentUser.user_id) {
 			return null;
 		}
-		if (currentUser.status && String(currentUser.status).toUpperCase() === 'DISABLED') {
-			return { disabled: true, user: null };
+		if (currentUser.status && String(currentUser.status).toUpperCase() !== 'ACTIVE') {
+			return { disabled: true, unconfirmed: false, user: null };
+		}
+		if (currentUser.is_confirmed === false) {
+			return { disabled: false, unconfirmed: true, user: null };
 		}
 		return {
 			disabled: false,
+			unconfirmed: false,
 			user: {
 				userId: String(currentUser.user_id),
 				email: currentUser.email_id || '',
@@ -240,7 +244,15 @@ module.exports = async (req, res) => {
 			sendJson(req, res, 403, {
 				ok: false,
 				code: 'ACCOUNT_DISABLED',
-				error: 'Your App User account is disabled. Contact your administrator.'
+				error: 'Your App User account is not active. Contact your administrator.'
+			});
+			return;
+		}
+		if (auth.unconfirmed) {
+			sendJson(req, res, 403, {
+				ok: false,
+				code: 'ACCOUNT_UNCONFIRMED',
+				error: 'Please confirm your invitation email in Manage Application Users before signing in.'
 			});
 			return;
 		}

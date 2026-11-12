@@ -1,9 +1,9 @@
 'use strict';
 
 const catalyst = require('zcatalyst-sdk-node');
+const { calculateReorderPlan, buildStockAnalysis } = require('./stockAnalyzer');
 
 const TABLE_NAME = 'Products';
-const MIN_REORDER_QTY = 50;
 
 function isLocalOrigin(origin) {
 	return typeof origin === 'string' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
@@ -57,27 +57,6 @@ function readJsonBody(req) {
 
 function unwrapProducts(rows) {
 	return (rows || []).map((row) => row[TABLE_NAME] || row);
-}
-
-function calculateReorderPlan(itemName, sku, newStock, reorderLevel) {
-	const needsReorder = newStock <= reorderLevel;
-	if (!needsReorder) {
-		return {
-			needsReorder: false,
-			reorderQty: 0,
-			reason: `Stock (${newStock}) is above reorder threshold (${reorderLevel}). No purchase order needed.`
-		};
-	}
-
-	const targetLevel = Math.max(reorderLevel * 5, reorderLevel + MIN_REORDER_QTY);
-	const reorderQty = Math.max(MIN_REORDER_QTY, targetLevel - newStock);
-	const urgency = newStock === 0 ? 'Out of stock' : 'Low stock';
-
-	return {
-		needsReorder: true,
-		reorderQty,
-		reason: `${urgency}: ${itemName} (SKU ${sku}) dropped to ${newStock} units (<= threshold ${reorderLevel}). Recommended reorder: ${reorderQty} units.`
-	};
 }
 
 function buildTemplateDraft({ sku, itemName, newStock, reorderLevel, reorderQty, supplierEmail }) {
@@ -205,14 +184,16 @@ function escapeHtml(value) {
 async function listProducts(catalystApp) {
 	const rows = await catalystApp
 		.zcql()
-		.executeZCQLQuery(`SELECT ROWID, SKU, ItemName, StockCount, ReorderLevel, SupplierEmail FROM ${TABLE_NAME} ORDER BY SKU ASC`);
+		.executeZCQLQuery(`SELECT ROWID, SKU, ItemName, StockCount, ReorderLevel, SupplierEmail, CREATEDTIME, MODIFIEDTIME FROM ${TABLE_NAME} ORDER BY SKU ASC`);
 	return unwrapProducts(rows).map((item) => ({
 		rowId: item.ROWID,
 		sku: String(item.SKU),
 		itemName: item.ItemName,
 		stockCount: Number(item.StockCount),
 		reorderLevel: Number(item.ReorderLevel),
-		supplierEmail: item.SupplierEmail
+		supplierEmail: item.SupplierEmail,
+		createdTime: item.CREATEDTIME || null,
+		modifiedTime: item.MODIFIEDTIME || null
 	}));
 }
 
@@ -222,6 +203,13 @@ async function findProductBySku(catalystApp, sku) {
 		.executeZCQLQuery(`SELECT ROWID, SKU, ItemName, StockCount, ReorderLevel, SupplierEmail FROM ${TABLE_NAME} WHERE SKU = '${sku}'`);
 	const items = unwrapProducts(rows);
 	return items.length > 0 ? items[0] : null;
+}
+
+function getCapabilities() {
+	return {
+		llmConfigured: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
+		liveMailConfigured: Boolean((process.env.CATALYST_FROM_EMAIL || '').trim())
+	};
 }
 
 module.exports = async (req, res) => {
@@ -235,16 +223,28 @@ module.exports = async (req, res) => {
 
 	try {
 		const catalystApp = catalyst.initialize(req, { scope: 'admin' });
+		const capabilities = getCapabilities();
 
 		if (req.method === 'GET' && (pathname === '/' || pathname === '/products' || pathname === '/health')) {
 			const products = await listProducts(catalystApp);
 			sendJson(req, res, 200, {
 				ok: true,
 				products,
-				capabilities: {
-					llmConfigured: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
-					liveMailConfigured: Boolean((process.env.CATALYST_FROM_EMAIL || '').trim())
-				}
+				capabilities
+			});
+			return;
+		}
+
+		if (req.method === 'GET' && (pathname === '/stock-analysis' || pathname === '/dashboard')) {
+			const stagnantHoursParam = Number(parsedUrl.searchParams.get('stagnantHours'));
+			const stagnantHours = Number.isFinite(stagnantHoursParam) && stagnantHoursParam > 0 ? stagnantHoursParam : undefined;
+			const products = await listProducts(catalystApp);
+			const analysis = buildStockAnalysis(products, { stagnantHours });
+			sendJson(req, res, 200, {
+				ok: true,
+				analysis,
+				products,
+				capabilities
 			});
 			return;
 		}

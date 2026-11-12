@@ -2,8 +2,14 @@
 
 const catalyst = require('zcatalyst-sdk-node');
 const { calculateReorderPlan, buildStockAnalysis } = require('./stockAnalyzer');
-
-const TABLE_NAME = 'Products';
+const {
+	TABLE_NAME,
+	listProducts,
+	findProductBySku,
+	createProduct,
+	updateProduct,
+	deleteProduct
+} = require('./productManager');
 
 function isLocalOrigin(origin) {
 	return typeof origin === 'string' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
@@ -14,7 +20,7 @@ function sendJson(req, res, statusCode, payload) {
 	const origin = req.headers.origin;
 	if (isLocalOrigin(origin)) {
 		headers['Access-Control-Allow-Origin'] = origin;
-		headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+		headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
 		headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
 	}
 	res.writeHead(statusCode, headers);
@@ -53,10 +59,6 @@ function readJsonBody(req) {
 		});
 		req.on('error', reject);
 	});
-}
-
-function unwrapProducts(rows) {
-	return (rows || []).map((row) => row[TABLE_NAME] || row);
 }
 
 function buildTemplateDraft({ sku, itemName, newStock, reorderLevel, reorderQty, supplierEmail }) {
@@ -181,30 +183,6 @@ function escapeHtml(value) {
 		.replace(/>/g, '&gt;');
 }
 
-async function listProducts(catalystApp) {
-	const rows = await catalystApp
-		.zcql()
-		.executeZCQLQuery(`SELECT ROWID, SKU, ItemName, StockCount, ReorderLevel, SupplierEmail, CREATEDTIME, MODIFIEDTIME FROM ${TABLE_NAME} ORDER BY SKU ASC`);
-	return unwrapProducts(rows).map((item) => ({
-		rowId: item.ROWID,
-		sku: String(item.SKU),
-		itemName: item.ItemName,
-		stockCount: Number(item.StockCount),
-		reorderLevel: Number(item.ReorderLevel),
-		supplierEmail: item.SupplierEmail,
-		createdTime: item.CREATEDTIME || null,
-		modifiedTime: item.MODIFIEDTIME || null
-	}));
-}
-
-async function findProductBySku(catalystApp, sku) {
-	const rows = await catalystApp
-		.zcql()
-		.executeZCQLQuery(`SELECT ROWID, SKU, ItemName, StockCount, ReorderLevel, SupplierEmail FROM ${TABLE_NAME} WHERE SKU = '${sku}'`);
-	const items = unwrapProducts(rows);
-	return items.length > 0 ? items[0] : null;
-}
-
 function getCapabilities() {
 	return {
 		llmConfigured: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
@@ -243,6 +221,66 @@ module.exports = async (req, res) => {
 			sendJson(req, res, 200, {
 				ok: true,
 				analysis,
+				products,
+				capabilities
+			});
+			return;
+		}
+
+		if (req.method === 'POST' && (pathname === '/products' || pathname === '/products/create')) {
+			const body = await readJsonBody(req);
+			const result = await createProduct(catalystApp, body);
+			if (result.error) {
+				sendJson(req, res, result.status, { ok: false, error: result.error });
+				return;
+			}
+			const products = await listProducts(catalystApp);
+			sendJson(req, res, result.status, {
+				ok: true,
+				created: result.created,
+				products,
+				capabilities
+			});
+			return;
+		}
+
+		const skuParamMatch = pathname.match(/^\/products\/(\d{3})$/);
+		if (
+			(req.method === 'POST' && pathname === '/products/update') ||
+			(req.method === 'PUT' && (pathname === '/products' || skuParamMatch))
+		) {
+			const body = await readJsonBody(req);
+			const targetSku = skuParamMatch ? skuParamMatch[1] : body.sku;
+			const result = await updateProduct(catalystApp, targetSku, body);
+			if (result.error) {
+				sendJson(req, res, result.status, { ok: false, error: result.error });
+				return;
+			}
+			const products = await listProducts(catalystApp);
+			sendJson(req, res, result.status, {
+				ok: true,
+				updated: result.updated,
+				products,
+				capabilities
+			});
+			return;
+		}
+
+		if (
+			(req.method === 'POST' && pathname === '/products/delete') ||
+			(req.method === 'DELETE' && (pathname === '/products' || skuParamMatch))
+		) {
+			const body = await readJsonBody(req);
+			const targetSku = skuParamMatch ? skuParamMatch[1] : body.sku || parsedUrl.searchParams.get('sku');
+			const result = await deleteProduct(catalystApp, targetSku);
+			if (result.error) {
+				sendJson(req, res, result.status, { ok: false, error: result.error });
+				return;
+			}
+			const products = await listProducts(catalystApp);
+			sendJson(req, res, result.status, {
+				ok: true,
+				deleted: result.deleted,
 				products,
 				capabilities
 			});

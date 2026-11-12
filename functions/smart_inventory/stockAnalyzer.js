@@ -266,3 +266,4 @@ module.exports = {
 	analyzeProductStock,
 	buildStockAnalysis
 };
+

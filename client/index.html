@@ -3,18 +3,21 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Smart Inventory &amp; Replenishment Agent</title>
+	<title>SmartStock AI &mdash; Inventory Operations &amp; Replenishment</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 	<style>
 		:root {
-			--bg: #f6f7f9;
+			--bg: #f6f8fb;
 			--bg-accent: #eef2f7;
 			--surface: #ffffff;
 			--surface-subtle: #f9fafb;
 			--border: #e4e7ec;
 			--border-strong: #d0d5dd;
-			--ink: #101828;
-			--ink-2: #344054;
-			--muted: #667085;
+			--ink: #0f172a;
+			--ink-2: #334155;
+			--muted: #64748b;
 			--primary: #0f62fe;
 			--primary-hover: #0353e9;
 			--primary-soft: #edf4ff;
@@ -31,29 +34,34 @@
 			--danger-bg: #fef2f2;
 			--danger-border: #fecaca;
 			--danger-ink: #991b1b;
-			--shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
-			--shadow-md: 0 1px 2px -1px rgba(16, 24, 40, 0.06), 0 4px 12px -2px rgba(16, 24, 40, 0.05);
-			--mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-			--sans: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+			--shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+			--shadow-md: 0 1px 2px -1px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 12px 24px -6px rgba(15, 23, 42, 0.03);
+			--mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+			--sans: "Plus Jakarta Sans", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
 		}
 		* { box-sizing: border-box; }
 		body {
 			margin: 0;
 			min-height: 100vh;
 			font-family: var(--sans);
-			background: linear-gradient(180deg, #ffffff 0%, var(--bg) 180px, var(--bg) 100%);
+			background: radial-gradient(circle at 12% 0%, #eef4ff 0%, rgba(238, 244, 255, 0) 36%), var(--bg);
 			color: var(--ink);
 			line-height: 1.5;
 			-webkit-font-smoothing: antialiased;
 		}
 		.topbar-wrap {
-			background: var(--surface);
+			position: sticky;
+			top: 0;
+			z-index: 30;
+			background: rgba(255, 255, 255, 0.88);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
 			border-bottom: 1px solid var(--border);
 		}
 		.topbar {
-			max-width: 1220px;
+			max-width: 1260px;
 			margin: 0 auto;
-			padding: 16px 24px;
+			padding: 13px 24px;
 			display: flex;
 			flex-wrap: wrap;
 			align-items: center;
@@ -854,6 +862,237 @@
 			font-size: 0.84rem;
 			color: var(--muted);
 		}
+		.pm-two-col {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+		}
+		.pm-form-actions {
+			display: flex;
+			gap: 8px;
+			margin-top: 16px;
+		}
+		.pm-btn-danger {
+			background: var(--danger);
+			border-color: var(--danger);
+			color: #ffffff;
+		}
+		.pm-btn-danger:hover:not(:disabled) {
+			background: var(--danger-ink);
+			border-color: var(--danger-ink);
+		}
+		.pm-row-editing {
+			background: var(--primary-soft) !important;
+		}
+
+		.shell { max-width: 1260px; }
+		.kpi-card {
+			transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+		}
+		.kpi-card:hover {
+			border-color: var(--border-strong);
+			box-shadow: var(--shadow-md);
+		}
+		.kpi-top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+		}
+		.kpi-icon {
+			width: 32px;
+			height: 32px;
+			border-radius: 9px;
+			display: grid;
+			place-items: center;
+			flex-shrink: 0;
+			background: var(--bg);
+			color: var(--muted);
+			border: 1px solid var(--border);
+		}
+		.kpi-icon.ok { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+		.kpi-icon.warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-ink); }
+		.kpi-icon.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-ink); }
+		.kpi-icon.info { background: var(--primary-soft); border-color: #cfe0ff; color: var(--primary); }
+
+		.module-tab {
+			display: inline-flex;
+			align-items: center;
+			gap: 7px;
+		}
+		.tab-badge {
+			font-family: var(--mono);
+			font-size: 0.7rem;
+			font-weight: 700;
+			padding: 1px 6px;
+			border-radius: 999px;
+			background: var(--warn-bg);
+			color: var(--warn-ink);
+			border: 1px solid var(--warn-border);
+		}
+		.tab-badge:empty { display: none; }
+
+		.page-head-card {
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			padding: 18px 20px;
+			box-shadow: var(--shadow-sm);
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			margin-bottom: 18px;
+		}
+		.eyebrow {
+			font-size: 0.72rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.07em;
+			color: var(--primary);
+			margin-bottom: 3px;
+		}
+		.search-wrap {
+			position: relative;
+			display: inline-flex;
+			align-items: center;
+		}
+		.search-icon {
+			position: absolute;
+			left: 11px;
+			color: var(--muted);
+			display: grid;
+			place-items: center;
+			pointer-events: none;
+		}
+		.dash-search.has-icon {
+			padding-left: 33px;
+			width: 240px;
+		}
+		.btn-subtle-primary {
+			background: var(--primary-soft);
+			border-color: #cfe0ff;
+			color: var(--primary);
+		}
+		.btn-subtle-primary:hover:not(:disabled) {
+			background: #dfeaff;
+			border-color: #9ec0ff;
+		}
+		.sku-pill {
+			display: inline-block;
+			font-size: 0.78rem;
+			font-weight: 700;
+			padding: 3px 8px;
+			border-radius: 6px;
+			background: var(--bg);
+			border: 1px solid var(--border);
+			color: var(--ink);
+		}
+		.donut-wrap {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 24px;
+		}
+		.donut-svg { flex-shrink: 0; }
+		.donut-score {
+			font-family: var(--sans);
+			font-size: 1.45rem;
+			font-weight: 700;
+			fill: var(--ink);
+		}
+		.donut-sub {
+			font-family: var(--mono);
+			font-size: 0.6rem;
+			font-weight: 700;
+			letter-spacing: 0.08em;
+			fill: var(--muted);
+		}
+		.donut-legend {
+			flex: 1;
+			min-width: 190px;
+			display: grid;
+			gap: 8px;
+		}
+		.donut-legend-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			font-size: 0.83rem;
+		}
+		.donut-legend-key {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			color: var(--ink-2);
+			font-weight: 500;
+		}
+		.donut-legend-key i {
+			width: 9px;
+			height: 9px;
+			border-radius: 3px;
+			display: inline-block;
+		}
+		.donut-legend-val span { color: var(--muted); font-size: 0.76rem; }
+		.cov-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			font-size: 0.78rem;
+			font-weight: 600;
+			color: var(--ink-2);
+			margin-bottom: 12px;
+		}
+		.cov-legend-note {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			font-weight: 500;
+			color: var(--muted);
+		}
+		.marker-dot {
+			display: inline-block;
+			width: 2px;
+			height: 11px;
+			background: var(--ink);
+			opacity: 0.6;
+		}
+		.cov-name {
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.watch-clear {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
+		.watch-clear-icon {
+			color: var(--ok);
+			flex-shrink: 0;
+			margin-top: 1px;
+		}
+		.sup-left {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-width: 0;
+		}
+		.sup-avatar {
+			width: 32px;
+			height: 32px;
+			border-radius: 8px;
+			background: var(--primary-soft);
+			border: 1px solid #cfe0ff;
+			color: var(--primary);
+			font-family: var(--mono);
+			font-size: 0.74rem;
+			font-weight: 700;
+			display: grid;
+			place-items: center;
+			flex-shrink: 0;
+		}
 	</style>
 </head>
 <body>
@@ -870,14 +1109,25 @@
 					</svg>
 				</div>
 				<div>
-					<h1>Smart Inventory &amp; Replenishment Agent</h1>
-					<p>Warehouse SKU Scanner &middot; Zoho Catalyst Data Store &amp; Auto-Restock Console</p>
+					<h1>SmartStock AI &mdash; Inventory Operations</h1>
+					<p>SKU Replenishment, Stock Analytics &amp; Catalog Control &middot; Zoho Catalyst</p>
 				</div>
 			</div>
 			<div class="topbar-actions">
 				<nav class="module-tabs" aria-label="Workspace modules">
-					<button type="button" id="tabScanner" class="module-tab active" data-view="scanner">Scanner Console</button>
-					<button type="button" id="tabDashboard" class="module-tab" data-view="dashboard">Stock Analysis</button>
+					<button type="button" id="tabScanner" class="module-tab active" data-view="scanner">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+						<span>Scanner</span>
+					</button>
+					<button type="button" id="tabDashboard" class="module-tab" data-view="dashboard">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+						<span>Stock Analysis</span>
+						<span id="tabAlertBadge" class="tab-badge"></span>
+					</button>
+					<button type="button" id="tabProducts" class="module-tab" data-view="products">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+						<span>Products</span>
+					</button>
 				</nav>
 				<div class="status-bar">
 					<span id="connBadge" class="status-pill">Connecting</span>
@@ -892,22 +1142,34 @@
 		<section id="scannerView">
 		<section class="kpi-strip" aria-label="Inventory summary">
 			<div class="kpi-card">
-				<div class="kpi-label">Active SKUs</div>
+				<div class="kpi-top">
+					<div class="kpi-label">Active SKUs</div>
+					<span class="kpi-icon info" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+				</div>
 				<div id="kpiSkus" class="kpi-value">--</div>
 				<div class="kpi-sub">Tracked in Products table</div>
 			</div>
 			<div class="kpi-card">
-				<div class="kpi-label">Units On Hand</div>
+				<div class="kpi-top">
+					<div class="kpi-label">Units On Hand</div>
+					<span class="kpi-icon ok" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+				</div>
 				<div id="kpiUnits" class="kpi-value">--</div>
 				<div class="kpi-sub">Total warehouse stock</div>
 			</div>
 			<div class="kpi-card">
-				<div class="kpi-label">Low-Stock Alerts</div>
+				<div class="kpi-top">
+					<div class="kpi-label">Low-Stock Alerts</div>
+					<span class="kpi-icon warn" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+				</div>
 				<div id="kpiAlerts" class="kpi-value">--</div>
 				<div class="kpi-sub">At or below ReorderLevel</div>
 			</div>
 			<div class="kpi-card">
-				<div class="kpi-label">Email Dispatch</div>
+				<div class="kpi-top">
+					<div class="kpi-label">Email Dispatch</div>
+					<span class="kpi-icon info" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+				</div>
 				<div id="kpiMail" class="kpi-value" style="font-size:1.15rem;line-height:1.85;">--</div>
 				<div id="kpiMailSub" class="kpi-sub">Checking sender config</div>
 			</div>
@@ -1031,9 +1293,11 @@
 		</div>
 		</section>
 		<section id="dashboardView" hidden></section>
+		<section id="productsView" hidden></section>
 	</main>
 
 	<script src="./dashboard-analytics.js"></script>
+	<script src="./product-manager.js"></script>
 	<script>
 		const PROD_API_BASE = 'https://smartinventorysystem-60095756559.development.catalystserverless.in/server/smart_inventory/execute';
 		const LOCAL_API_BASE = 'http://localhost:3000/server/smart_inventory/execute';
@@ -1105,6 +1369,8 @@
 			kpiUnits.textContent = String(totalUnits);
 			kpiAlerts.textContent = String(lowCount);
 			kpiAlerts.className = lowCount > 0 ? 'kpi-value warn' : 'kpi-value';
+			const tabAlertBadge = document.getElementById('tabAlertBadge');
+			if (tabAlertBadge) tabAlertBadge.textContent = lowCount > 0 ? String(lowCount) : '';
 		}
 
 		function updateChipSelection(activeSku) {
@@ -1164,7 +1430,7 @@
 				const barPct = Math.min(100, Math.max(4, Math.round((p.stockCount / Math.max(p.reorderLevel * 3, 25)) * 100)));
 				return `
 					<tr>
-						<td class="mono"><strong>${escapeHtml(p.sku)}</strong></td>
+						<td><span class="sku-pill mono">${escapeHtml(p.sku)}</span></td>
 						<td><strong>${escapeHtml(p.itemName)}</strong></td>
 						<td class="num">
 							<strong>${p.stockCount}</strong>
@@ -1334,18 +1600,36 @@
 
 		const scannerView = document.getElementById('scannerView');
 		const dashboardView = document.getElementById('dashboardView');
+		const productsView = document.getElementById('productsView');
 		const tabScanner = document.getElementById('tabScanner');
 		const tabDashboard = document.getElementById('tabDashboard');
+		const tabProducts = document.getElementById('tabProducts');
+
+		const handleProductsSync = (products) => {
+			state.products = products;
+			renderProducts();
+			if (productManagerModule) productManagerModule.setProducts(products);
+		};
 
 		const dashboardModule = window.StockDashboardModule.create({
 			container: dashboardView,
 			apiBase: API_BASE,
 			onRestock: restockSku,
 			onCapabilities: updateCapabilityBadges,
-			onProductsSync: (products) => {
-				state.products = products;
-				renderProducts();
-			},
+			onProductsSync: handleProductsSync,
+			onSelectSkuForScan: (sku) => {
+				setActiveView('scanner');
+				skuInput.value = sku;
+				updatePreview();
+				qtyInput.focus();
+			}
+		});
+
+		var productManagerModule = window.ProductManagerModule.create({
+			container: productsView,
+			apiBase: API_BASE,
+			onCapabilities: updateCapabilityBadges,
+			onProductsSync: handleProductsSync,
 			onSelectSkuForScan: (sku) => {
 				setActiveView('scanner');
 				skuInput.value = sku;
@@ -1355,31 +1639,46 @@
 		});
 
 		function setActiveView(view) {
-			const showDashboard = view === 'dashboard';
-			scannerView.hidden = showDashboard;
-			dashboardView.hidden = !showDashboard;
-			tabScanner.classList.toggle('active', !showDashboard);
-			tabDashboard.classList.toggle('active', showDashboard);
-			if (showDashboard) {
-				if (location.hash !== '#dashboard') history.replaceState(null, '', '#dashboard');
+			const normalized = view === 'dashboard' || view === 'products' ? view : 'scanner';
+			scannerView.hidden = normalized !== 'scanner';
+			dashboardView.hidden = normalized !== 'dashboard';
+			productsView.hidden = normalized !== 'products';
+
+			tabScanner.classList.toggle('active', normalized === 'scanner');
+			tabDashboard.classList.toggle('active', normalized === 'dashboard');
+			tabProducts.classList.toggle('active', normalized === 'products');
+
+			const targetHash = `#${normalized}`;
+			if (location.hash !== targetHash && (normalized !== 'scanner' || location.hash)) {
+				history.replaceState(null, '', targetHash);
+			}
+
+			if (normalized === 'dashboard') {
 				dashboardModule.load();
-			} else if (location.hash === '#dashboard') {
-				history.replaceState(null, '', '#scanner');
+			} else if (normalized === 'products') {
+				productManagerModule.setProducts(state.products);
+				productManagerModule.load(true);
 			}
 		}
 
 		tabScanner.addEventListener('click', () => setActiveView('scanner'));
 		tabDashboard.addEventListener('click', () => setActiveView('dashboard'));
+		tabProducts.addEventListener('click', () => setActiveView('products'));
 		window.addEventListener('hashchange', () => {
 			if (location.hash === '#dashboard') setActiveView('dashboard');
+			else if (location.hash === '#products') setActiveView('products');
 			else if (location.hash === '#scanner') setActiveView('scanner');
 		});
 
 		if (location.hash === '#dashboard' || location.pathname.endsWith('/dashboard')) {
 			setActiveView('dashboard');
+		} else if (location.hash === '#products' || location.pathname.endsWith('/products')) {
+			setActiveView('products');
 		}
 
-		fetchProducts();
+		fetchProducts().then(() => {
+			productManagerModule.setProducts(state.products);
+		});
 	</script>
 </body>
 </html>

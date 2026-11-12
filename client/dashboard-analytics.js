@@ -9,6 +9,17 @@
 			.replace(/"/g, '&quot;');
 	}
 
+	const ICONS = {
+		search: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+		refresh: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>',
+		download: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+		shieldOk: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>',
+		activity: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+		alert: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+		clock: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+		layers: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>'
+	};
+
 	function createDashboardModule(options) {
 		const container = options.container;
 		const apiBase = options.apiBase;
@@ -27,10 +38,10 @@
 		};
 
 		const DIST_COLORS = {
-			out_of_stock: 'var(--danger)',
-			low_stock: 'var(--warn)',
-			healthy: 'var(--ok)',
-			overstock: 'var(--primary)'
+			out_of_stock: '#dc2626',
+			low_stock: '#d97706',
+			healthy: '#059669',
+			overstock: '#0f62fe'
 		};
 
 		function statusBadgeClass(status) {
@@ -128,6 +139,48 @@
 			}
 		}
 
+		function renderHealthDonut(distribution, summary) {
+			const total = Math.max(1, summary.totalSkus || 0);
+			const radius = 50;
+			const circumference = 2 * Math.PI * radius;
+			let offset = 0;
+
+			const segments = (distribution || [])
+				.filter((d) => d.count > 0)
+				.map((d) => {
+					const fraction = d.count / total;
+					const segLen = Math.max(0, fraction * circumference - 3);
+					const dashArray = `${segLen} ${circumference}`;
+					const dashOffset = -offset;
+					offset += fraction * circumference;
+					return `<circle cx="64" cy="64" r="${radius}" fill="none" stroke="${DIST_COLORS[d.key] || '#059669'}" stroke-width="14" stroke-dasharray="${dashArray}" stroke-dashoffset="${dashOffset}" stroke-linecap="butt" />`;
+				})
+				.join('');
+
+			return `
+				<div class="donut-wrap">
+					<svg class="donut-svg" viewBox="0 0 128 128" width="132" height="132" aria-label="Inventory health donut chart">
+						<circle cx="64" cy="64" r="${radius}" fill="none" stroke="#eef2f7" stroke-width="14" />
+						<g transform="rotate(-90 64 64)">${segments}</g>
+						<text x="64" y="61" text-anchor="middle" class="donut-score">${summary.healthScore}%</text>
+						<text x="64" y="77" text-anchor="middle" class="donut-sub">HEALTH</text>
+					</svg>
+					<div class="donut-legend">
+						${(distribution || [])
+							.map(
+								(d) => `
+								<div class="donut-legend-row">
+									<span class="donut-legend-key"><i style="background:${DIST_COLORS[d.key]};"></i>${escapeHtml(d.label)}</span>
+									<span class="donut-legend-val mono"><strong>${d.count}</strong> <span>(${d.pct}%)</span></span>
+								</div>
+							`
+							)
+							.join('')}
+					</div>
+				</div>
+			`;
+		}
+
 		function renderCoverageBars(items) {
 			if (!items.length) {
 				return '<div class="dash-empty">No SKUs available to plot coverage.</div>';
@@ -139,18 +192,18 @@
 				.map((item) => {
 					const stockPct = Math.min(100, Math.round((item.stockCount / maxScale) * 100));
 					const reorderPct = Math.min(98, Math.round((item.reorderLevel / maxScale) * 100));
-					const barColor = DIST_COLORS[item.status] || 'var(--ok)';
+					const barColor = DIST_COLORS[item.status] || '#059669';
 					return `
 						<div class="cov-row">
 							<div class="cov-label">
-								<span class="mono" style="font-weight:700;">${escapeHtml(item.sku)}</span>
-								<span>${escapeHtml(item.itemName)}</span>
+								<span class="sku-pill mono">${escapeHtml(item.sku)}</span>
+								<span class="cov-name">${escapeHtml(item.itemName)}</span>
 							</div>
 							<div class="cov-track" title="On Hand: ${item.stockCount} | Reorder <= ${item.reorderLevel} | Target Par: ${item.targetPar}">
 								<div class="cov-fill" style="width:${stockPct}%;background:${barColor};"></div>
 								<span class="cov-marker" style="left:${reorderPct}%;" title="Reorder threshold: ${item.reorderLevel}"></span>
 							</div>
-							<div class="cov-meta mono">${item.stockCount} / ${item.targetPar}</div>
+							<div class="cov-meta mono"><strong>${item.stockCount}</strong> / ${item.targetPar}</div>
 						</div>
 					`;
 				})
@@ -162,23 +215,26 @@
 			if (!flagged.length) {
 				return `
 					<div class="watch-clear">
-						<strong>No stuck or overstocked SKUs detected</strong>
-						<span>All inventory items moved within the ${state.stagnantHours}h window and remain at or below target par.</span>
+						<span class="watch-clear-icon" aria-hidden="true">${ICONS.shieldOk}</span>
+						<div>
+							<strong>Inventory flow is healthy</strong>
+							<span>No SKUs have been idle for &ge; ${state.stagnantHours}h or holding stock above target par.</span>
+						</div>
 					</div>
 				`;
 			}
 			return flagged
 				.map((item) => {
 					const reasons = [];
-					if (item.isStagnant) reasons.push(`No stock movement (${escapeHtml(item.movementLabel)})`);
-					if (item.excessUnits > 0) reasons.push(`${item.excessUnits} units above target par (${item.targetPar})`);
+					if (item.isStagnant) reasons.push(`Idle for ${escapeHtml(item.movementLabel)}`);
+					if (item.excessUnits > 0) reasons.push(`${item.excessUnits} units over par (${item.targetPar})`);
 					return `
 						<div class="watch-item">
 							<div>
-								<div class="watch-title"><span class="mono">${escapeHtml(item.sku)}</span> &middot; ${escapeHtml(item.itemName)}</div>
+								<div class="watch-title"><span class="sku-pill mono">${escapeHtml(item.sku)}</span> ${escapeHtml(item.itemName)}</div>
 								<div class="watch-sub">${reasons.join(' &bull; ')}</div>
 							</div>
-							<div class="watch-qty mono">${item.stockCount} units</div>
+							<span class="badge-status ${item.status === 'overstock' ? 'info' : 'low'} mono">${item.stockCount} units</span>
 						</div>
 					`;
 				})
@@ -192,14 +248,18 @@
 			return suppliers
 				.map((sup) => {
 					const needsOrder = sup.recommendedReorderQty > 0;
+					const initials = (sup.supplierEmail || 'SP').slice(0, 2).toUpperCase();
 					return `
 						<div class="sup-row">
-							<div class="sup-main">
-								<div class="sup-email">${escapeHtml(sup.supplierEmail)}</div>
-								<div class="sup-skus">SKUs: ${sup.skus.map((s) => `<span class="mono">${escapeHtml(s)}</span>`).join(', ')} (${sup.totalUnits} units on hand)</div>
+							<div class="sup-left">
+								<span class="sup-avatar">${escapeHtml(initials)}</span>
+								<div class="sup-main">
+									<div class="sup-email">${escapeHtml(sup.supplierEmail)}</div>
+									<div class="sup-skus">SKUs ${sup.skus.map((s) => `<span class="mono">${escapeHtml(s)}</span>`).join(', ')} &middot; ${sup.totalUnits} on hand</div>
+								</div>
 							</div>
 							<span class="badge-status ${needsOrder ? 'low' : 'ok'}">
-								${needsOrder ? `Order +${sup.recommendedReorderQty}` : 'Balanced'}
+								${needsOrder ? `Reorder +${sup.recommendedReorderQty}` : 'Balanced'}
 							</span>
 						</div>
 					`;
@@ -218,7 +278,8 @@
 				overstockCount: 0,
 				excessUnits: 0,
 				healthScore: 100,
-				averageCoverageRatio: 0
+				averageCoverageRatio: 0,
+				healthyCount: 0
 			};
 			const items = analysis?.items || [];
 			const distribution = analysis?.distribution || [];
@@ -235,23 +296,28 @@
 
 			const healthTone =
 				summary.healthScore >= 80 ? 'ok' : summary.healthScore >= 55 ? 'warn' : 'danger';
+			const stuckTotal = summary.stagnantCount + summary.overstockCount;
 
 			container.innerHTML = `
-				<div class="dash-toolbar">
+				<div class="page-head-card">
 					<div>
-						<h2 class="dash-heading">Stock Analysis Dashboard</h2>
-						<p class="dash-subtitle">Real-time SKU health scoring, threshold coverage, idle/stuck detection, and supplier replenishment rollup.</p>
+						<div class="eyebrow">Operations Intelligence</div>
+						<h2 class="dash-heading">Stock Health &amp; Stagnation Analytics</h2>
+						<p class="dash-subtitle">Real-time threshold coverage, idle/stuck stock detection, and vendor replenishment priorities.</p>
 					</div>
 					<div class="dash-controls">
-						<input
-							id="dashSearchInput"
-							type="search"
-							class="input-control dash-search"
-							placeholder="Filter SKU, product, supplier..."
-							value="${escapeHtml(state.search)}"
-						/>
+						<div class="search-wrap">
+							<span class="search-icon" aria-hidden="true">${ICONS.search}</span>
+							<input
+								id="dashSearchInput"
+								type="search"
+								class="input-control dash-search has-icon"
+								placeholder="Search SKU, product, vendor..."
+								value="${escapeHtml(state.search)}"
+							/>
+						</div>
 						<label class="dash-select-wrap">
-							<span>Idle threshold</span>
+							<span>Idle window</span>
 							<select id="dashStagnantSelect" class="input-control dash-select">
 								<option value="1" ${state.stagnantHours === 1 ? 'selected' : ''}>1 hour</option>
 								<option value="6" ${state.stagnantHours === 6 ? 'selected' : ''}>6 hours</option>
@@ -261,10 +327,12 @@
 							</select>
 						</label>
 						<button type="button" id="dashRefreshBtn" class="btn btn-sm" ${state.loading ? 'disabled' : ''}>
-							${state.loading ? 'Analyzing...' : 'Refresh Analysis'}
+							${ICONS.refresh}
+							<span>${state.loading ? 'Analyzing...' : 'Refresh'}</span>
 						</button>
-						<button type="button" id="dashExportBtn" class="btn btn-sm" ${!items.length ? 'disabled' : ''}>
-							Export CSV
+						<button type="button" id="dashExportBtn" class="btn btn-sm btn-subtle-primary" ${!items.length ? 'disabled' : ''}>
+							${ICONS.download}
+							<span>Export CSV</span>
 						</button>
 					</div>
 				</div>
@@ -273,22 +341,34 @@
 
 				<section class="kpi-strip" aria-label="Stock analysis metrics">
 					<div class="kpi-card">
-						<div class="kpi-label">Inventory Health</div>
+						<div class="kpi-top">
+							<div class="kpi-label">Inventory Health</div>
+							<span class="kpi-icon ${healthTone}" aria-hidden="true">${ICONS.activity}</span>
+						</div>
 						<div class="kpi-value ${healthTone}">${summary.healthScore}%</div>
 						<div class="kpi-sub">${summary.healthyCount || 0} of ${summary.totalSkus} SKUs in optimal band</div>
 					</div>
 					<div class="kpi-card">
-						<div class="kpi-label">Replenishment Queue</div>
+						<div class="kpi-top">
+							<div class="kpi-label">Reorder Queue</div>
+							<span class="kpi-icon ${summary.needsReorderCount > 0 ? 'warn' : 'ok'}" aria-hidden="true">${ICONS.alert}</span>
+						</div>
 						<div class="kpi-value ${summary.needsReorderCount > 0 ? 'warn' : ''}">${summary.needsReorderCount}</div>
-						<div class="kpi-sub">${summary.totalRecommendedReorderQty} units recommended to order</div>
+						<div class="kpi-sub">${summary.totalRecommendedReorderQty} recommended order units</div>
 					</div>
 					<div class="kpi-card">
-						<div class="kpi-label">Stuck / Idle &amp; Excess</div>
-						<div class="kpi-value ${summary.stagnantCount + summary.overstockCount > 0 ? 'warn' : ''}">${summary.stagnantCount + summary.overstockCount}</div>
+						<div class="kpi-top">
+							<div class="kpi-label">Stuck &amp; Overstock</div>
+							<span class="kpi-icon ${stuckTotal > 0 ? 'warn' : 'ok'}" aria-hidden="true">${ICONS.clock}</span>
+						</div>
+						<div class="kpi-value ${stuckTotal > 0 ? 'warn' : ''}">${stuckTotal}</div>
 						<div class="kpi-sub">${summary.stagnantCount} idle &ge; ${state.stagnantHours}h &middot; ${summary.excessUnits} excess units</div>
 					</div>
 					<div class="kpi-card">
-						<div class="kpi-label">Avg Threshold Coverage</div>
+						<div class="kpi-top">
+							<div class="kpi-label">Threshold Coverage</div>
+							<span class="kpi-icon info" aria-hidden="true">${ICONS.layers}</span>
+						</div>
 						<div class="kpi-value">${summary.averageCoverageRatio}x</div>
 						<div class="kpi-sub">Across ${summary.totalUnits} total units on hand</div>
 					</div>
@@ -297,37 +377,26 @@
 				<div class="dash-grid">
 					<section class="panel" aria-labelledby="coverageHeading">
 						<div class="panel-head">
-							<h3 id="coverageHeading" class="panel-title">Stock Coverage vs Reorder Threshold</h3>
+							<h3 id="coverageHeading" class="panel-title">Status Mix &amp; Par Coverage</h3>
 							<span class="panel-meta">${items.length} SKUs</span>
 						</div>
 						<div class="panel-body">
-							<div class="dist-bar" aria-label="Stock status distribution">
-								${distribution
-									.filter((d) => d.count > 0)
-									.map(
-										(d) => `<span class="dist-seg" style="width:${Math.max(4, d.pct)}%;background:${DIST_COLORS[d.key]};" title="${escapeHtml(d.label)}: ${d.count} (${d.pct}%)"></span>`
-									)
-									.join('') || '<span class="dist-seg" style="width:100%;background:var(--border);"></span>'}
-							</div>
-							<div class="dist-legend">
-								${distribution
-									.map(
-										(d) => `<span class="dist-item"><i style="background:${DIST_COLORS[d.key]};"></i>${escapeHtml(d.label)}: <strong>${d.count}</strong></span>`
-									)
-									.join('')}
-							</div>
+							${renderHealthDonut(distribution, summary)}
 							<hr class="divider" />
+							<div class="cov-header">
+								<span>SKU Stock vs Target Par</span>
+								<span class="cov-legend-note"><i class="marker-dot"></i> Reorder threshold</span>
+							</div>
 							<div class="cov-list">
 								${renderCoverageBars(items)}
 							</div>
-							<div class="cov-footnote">Vertical marker inside each track indicates <code>ReorderLevel</code>; right figure shows <code>On Hand / Target Par</code>.</div>
 						</div>
 					</section>
 
 					<div class="right-stack">
 						<section class="panel" aria-labelledby="stuckHeading">
 							<div class="panel-head">
-								<h3 id="stuckHeading" class="panel-title">Idle / Overstock Risk Monitor</h3>
+								<h3 id="stuckHeading" class="panel-title">Idle &amp; Excess Watchlist</h3>
 								<span class="panel-meta">&ge; ${state.stagnantHours}H WINDOW</span>
 							</div>
 							<div class="panel-body">
@@ -337,7 +406,7 @@
 
 						<section class="panel" aria-labelledby="supplierHeading">
 							<div class="panel-head">
-								<h3 id="supplierHeading" class="panel-title">Supplier Replenishment Rollup</h3>
+								<h3 id="supplierHeading" class="panel-title">Vendor Replenishment Rollup</h3>
 								<span class="panel-meta">${suppliers.length} VENDORS</span>
 							</div>
 							<div class="panel-body">
@@ -379,14 +448,14 @@
 												.map(
 													(item) => `
 													<tr>
-														<td class="mono"><strong>${escapeHtml(item.sku)}</strong></td>
+														<td><span class="sku-pill mono">${escapeHtml(item.sku)}</span></td>
 														<td>
 															<strong>${escapeHtml(item.itemName)}</strong>
 															<div style="font-size:0.75rem;color:var(--muted);">${escapeHtml(item.supplierEmail)}</div>
 														</td>
-														<td class="num mono">${item.stockCount} / ${item.targetPar}</td>
+														<td class="num mono"><strong>${item.stockCount}</strong> / ${item.targetPar}</td>
 														<td class="num mono">${item.coverageRatio}x</td>
-														<td>${escapeHtml(item.movementLabel)}</td>
+														<td style="color:var(--ink-2);">${escapeHtml(item.movementLabel)}</td>
 														<td>
 															<span class="badge-status ${statusBadgeClass(item.status)}">${escapeHtml(item.statusLabel)}</span>
 															${item.isStagnant ? '<span class="badge-status low" style="margin-left:4px;">Idle</span>' : ''}

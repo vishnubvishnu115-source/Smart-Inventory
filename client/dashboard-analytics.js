@@ -23,6 +23,7 @@
 	function createDashboardModule(options) {
 		const container = options.container;
 		const apiBase = options.apiBase;
+		const fetcher = options.fetcher || (global.SmartAuth ? global.SmartAuth.authFetch : global.fetch.bind(global));
 		const onRestock = options.onRestock;
 		const onSelectSkuForScan = options.onSelectSkuForScan;
 		const onCapabilities = options.onCapabilities;
@@ -119,7 +120,7 @@
 			render();
 			try {
 				const url = `${apiBase}/stock-analysis?stagnantHours=${encodeURIComponent(state.stagnantHours)}`;
-				const res = await fetch(url);
+				const res = await fetcher(url);
 				const data = await res.json();
 				if (!res.ok || !data.ok) {
 					throw new Error(data.error || 'Failed to load stock analysis');

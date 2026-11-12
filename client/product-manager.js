@@ -21,6 +21,7 @@
 	function createProductManagerModule(options) {
 		const container = options.container;
 		const apiBase = options.apiBase;
+		const fetcher = options.fetcher || (global.SmartAuth ? global.SmartAuth.authFetch : global.fetch.bind(global));
 		const onProductsSync = options.onProductsSync;
 		const onCapabilities = options.onCapabilities;
 		const onSelectSkuForScan = options.onSelectSkuForScan;
@@ -96,7 +97,7 @@
 			if (!preserveBanner) clearBanner();
 			render();
 			try {
-				const res = await fetch(`${apiBase}/products`);
+				const res = await fetcher(`${apiBase}/products`);
 				const data = await res.json();
 				if (!res.ok || !data.ok) {
 					throw new Error(data.error || 'Failed to load catalog');
@@ -150,7 +151,7 @@
 			state.saving = true;
 			render();
 			try {
-				const res = await fetch(endpoint, {
+				const res = await fetcher(endpoint, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(payload)
@@ -185,7 +186,7 @@
 			state.saving = true;
 			render();
 			try {
-				const res = await fetch(`${apiBase}/products/delete`, {
+				const res = await fetcher(`${apiBase}/products/delete`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ sku })

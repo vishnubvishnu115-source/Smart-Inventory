@@ -20,6 +20,7 @@ function sendJson(req, res, statusCode, payload) {
 	const origin = req.headers.origin;
 	if (isLocalOrigin(origin)) {
 		headers['Access-Control-Allow-Origin'] = origin;
+		headers['Access-Control-Allow-Credentials'] = 'true';
 		headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
 		headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
 	}
@@ -190,6 +191,32 @@ function getCapabilities() {
 	};
 }
 
+async function authenticateAppUser(req) {
+	try {
+		const userApp = catalyst.initialize(req);
+		const currentUser = await userApp.userManagement().getCurrentUser();
+		if (!currentUser || !currentUser.user_id) {
+			return null;
+		}
+		if (currentUser.status && String(currentUser.status).toUpperCase() === 'DISABLED') {
+			return { disabled: true, user: null };
+		}
+		return {
+			disabled: false,
+			user: {
+				userId: String(currentUser.user_id),
+				email: currentUser.email_id || '',
+				firstName: currentUser.first_name || '',
+				lastName: currentUser.last_name || '',
+				roleId: String(currentUser.role_details?.role_id || ''),
+				roleName: String(currentUser.role_details?.role_name || 'App User')
+			}
+		};
+	} catch {
+		return null;
+	}
+}
+
 module.exports = async (req, res) => {
 	if (req.method === 'OPTIONS') {
 		sendJson(req, res, 204, {});
@@ -200,13 +227,41 @@ module.exports = async (req, res) => {
 	const pathname = parsedUrl.pathname.replace(/^\/execute/, '') || '/';
 
 	try {
+		const auth = await authenticateAppUser(req);
+		if (!auth) {
+			sendJson(req, res, 401, {
+				ok: false,
+				code: 'AUTH_REQUIRED',
+				error: 'Authentication required. Only authorized Catalyst App Users can access SmartStock AI.'
+			});
+			return;
+		}
+		if (auth.disabled) {
+			sendJson(req, res, 403, {
+				ok: false,
+				code: 'ACCOUNT_DISABLED',
+				error: 'Your App User account is disabled. Contact your administrator.'
+			});
+			return;
+		}
+
 		const catalystApp = catalyst.initialize(req, { scope: 'admin' });
 		const capabilities = getCapabilities();
+
+		if (req.method === 'GET' && pathname === '/me') {
+			sendJson(req, res, 200, {
+				ok: true,
+				user: auth.user,
+				capabilities
+			});
+			return;
+		}
 
 		if (req.method === 'GET' && (pathname === '/' || pathname === '/products' || pathname === '/health')) {
 			const products = await listProducts(catalystApp);
 			sendJson(req, res, 200, {
 				ok: true,
+				user: auth.user,
 				products,
 				capabilities
 			});

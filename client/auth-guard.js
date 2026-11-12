@@ -134,16 +134,27 @@
 	}
 
 	async function getAuthHeaders() {
+		const isLocal = global.location && (global.location.hostname === 'localhost' || global.location.hostname === '127.0.0.1');
 		const auth = global.catalyst && global.catalyst.auth;
 		if (!auth || typeof auth.generateAuthToken !== 'function') {
 			return {};
 		}
-		const tokenRes = await auth.generateAuthToken();
-		const token = tokenRes && tokenRes.access_token;
-		if (!token) {
-			throw new Error('Active Catalyst App User session token unavailable.');
+		try {
+			const tokenRes = await auth.generateAuthToken();
+			const token = tokenRes && tokenRes.access_token;
+			if (!token) {
+				if (isLocal) return {};
+				throw new Error('Active Catalyst App User session token unavailable.');
+			}
+			return { Authorization: token };
+		} catch (err) {
+			if (isLocal) {
+				// On local `catalyst serve`, ports 3001 and 3000 share localhost session cookies cleanly.
+				return {};
+			}
+			if (unauthorizedHandler) unauthorizedHandler();
+			throw err;
 		}
-		return { Authorization: token };
 	}
 
 	async function authFetch(url, options = {}) {

@@ -25,6 +25,7 @@ const {
 	listExpenses,
 	getExpenseSummary,
 	createExpense,
+	deleteExpense,
 	listCategories: listExpenseCategories,
 	listExpensesFromDataStore
 } = require('./expenseManager');
@@ -710,6 +711,28 @@ module.exports = async (req, res) => {
 				return;
 			}
 			sendJson(req, res, 201, result);
+			return;
+		}
+
+		if (
+			(req.method === 'POST' && pathname === '/expenses/delete') ||
+			(req.method === 'DELETE' && (pathname === '/expenses' || pathname.startsWith('/expenses/')))
+		) {
+			const body = await readJsonBody(req);
+			let expenseId = body.expenseId || body.expense_id || body.rowId || parsedUrl.searchParams.get('expenseId') || parsedUrl.searchParams.get('id');
+			if (!expenseId && pathname.startsWith('/expenses/')) {
+				const parts = pathname.split('/');
+				if (parts.length >= 3 && !['organizations', 'categories', 'summary', 'datastore', 'delete'].includes(parts[2])) {
+					expenseId = parts[2];
+				}
+			}
+			const orgId = parsedUrl.searchParams.get('organization_id') || body.organization_id;
+			const result = await deleteExpense(catalystApp, expenseId, orgId);
+			if (result.error) {
+				sendJson(req, res, result.status || 500, { ok: false, error: result.error });
+				return;
+			}
+			sendJson(req, res, 200, result);
 			return;
 		}
 

@@ -41,7 +41,9 @@
 			isLoading: false,
 			error: null,
 			showAddModal: false,
-			isSubmitting: false
+			isSubmitting: false,
+			confirmDeleteId: null,
+			isDeleting: false
 		};
 
 		async function loadOrganizations() {
@@ -134,6 +136,30 @@
 				alert(`Error saving expense: ${err.message}`);
 			} finally {
 				state.isSubmitting = false;
+				render();
+			}
+		}
+
+		async function deleteExpenseRecord(identifier) {
+			state.isDeleting = true;
+			render();
+			try {
+				const query = state.selectedOrgId ? `?organization_id=${state.selectedOrgId}` : '';
+				const res = await apiFetch(`${API_BASE}/expenses/delete${query}`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ expenseId: identifier })
+				});
+				const data = await res.json();
+				if (!res.ok || !data.ok) {
+					throw new Error(data.error || 'Failed to delete expense.');
+				}
+				state.confirmDeleteId = null;
+				await loadExpenses();
+			} catch (err) {
+				alert(`Failed to delete expense: ${err.message}`);
+			} finally {
+				state.isDeleting = false;
 				render();
 			}
 		}
@@ -266,12 +292,13 @@
 										<th>Submitter</th>
 										<th>Status &amp; Storage</th>
 										<th class="num">Amount</th>
+										<th style="text-align: right; width: 100px;">Action</th>
 									</tr>
 								</thead>
 								<tbody>
 									${filteredExpenses.length === 0 ? `
 										<tr>
-											<td colspan="6" style="padding: 40px; text-align: center; color: var(--muted); font-size: 0.85rem;">
+											<td colspan="7" style="padding: 40px; text-align: center; color: var(--muted); font-size: 0.85rem;">
 												No expenses recorded yet. Click <strong>Record Expense</strong> to create your first entry.
 											</td>
 										</tr>
@@ -287,6 +314,8 @@
 										const paidThrough = exp.paid_through_account_name || 'Petty Cash';
 										const submitter = exp.user_name || exp.created_by_name || 'Operator';
 										const expenseDate = exp.date || exp.expense_date || '-';
+										const expId = String(exp.expense_id || exp.ROWID || '');
+										const isConfirming = state.confirmDeleteId === expId;
 
 										return `
 											<tr>
@@ -321,6 +350,19 @@
 												</td>
 												<td class="num" style="font-weight: 700; color: var(--ink); font-size: 0.92rem; white-space: nowrap;">
 													${formatCurrency(exp.total || exp.amount, exp.currency_code)}
+												</td>
+												<td style="text-align: right; white-space: nowrap;">
+													${isConfirming ? `
+														<div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
+															<button type="button" class="btn btn-sm exp-btn-confirm-del" data-id="${escapeHtml(expId)}" ${state.isDeleting ? 'disabled' : ''} style="padding: 2px 8px; font-size: 0.72rem; line-height: 1.4; background: var(--danger); border-color: var(--danger); color: #fff;">Confirm</button>
+															<button type="button" class="btn btn-sm btn-secondary exp-btn-cancel-del" style="padding: 2px 6px; font-size: 0.72rem; line-height: 1.4;" title="Cancel">&times;</button>
+														</div>
+													` : `
+														<button type="button" class="btn btn-sm exp-btn-del" data-id="${escapeHtml(expId)}" title="Delete expense from Zoho Expense and Catalyst Data Store" style="padding: 3px 8px; font-size: 0.75rem; color: var(--danger-ink); border: 1px solid transparent; background: transparent; cursor: pointer; border-radius: 4px;">
+															<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+															<span>Delete</span>
+														</button>
+													`}
 												</td>
 											</tr>
 										`;
@@ -529,6 +571,27 @@
 					});
 				});
 			}
+
+			// Expense Delete Handlers
+			container.querySelectorAll('.exp-btn-del').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					state.confirmDeleteId = btn.dataset.id;
+					render();
+				});
+			});
+
+			container.querySelectorAll('.exp-btn-cancel-del').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					state.confirmDeleteId = null;
+					render();
+				});
+			});
+
+			container.querySelectorAll('.exp-btn-confirm-del').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					deleteExpenseRecord(btn.dataset.id);
+				});
+			});
 		}
 
 		return {

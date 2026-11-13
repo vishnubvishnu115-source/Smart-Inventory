@@ -146,12 +146,82 @@ async function listExpenses(catalystApp, options = {}) {
 		};
 	}
 
+	const liveExpenses = data.expenses || [];
+
+	// Automatically reconcile Data Store 'Expenses' table with live Zoho Expense state:
+	// When expenses are deleted in Zoho Expense, remove the matching orphaned records from Data Store.
+	// When expenses are added in Zoho Expense, ensure they are mirrored in Data Store.
+	if (!options.category_id && !options.status && !options.date_start && !options.date_end) {
+		await reconcileDataStoreWithLiveExpenses(catalystApp, orgId, liveExpenses);
+	}
+
 	return {
 		ok: true,
-		expenses: data.expenses || [],
+		expenses: liveExpenses,
 		page_context: data.page_context,
 		organization_id: orgId
 	};
+}
+
+/**
+ * Reconciles Catalyst Data Store 'Expenses' table with live Zoho Expense state
+ */
+async function reconcileDataStoreWithLiveExpenses(catalystApp, orgId, liveExpenses) {
+	try {
+		const liveExpenseIds = new Set((liveExpenses || []).map((e) => String(e.expense_id || '')));
+		const dsRows = await catalystApp.zcql().executeZCQLQuery('SELECT ROWID, expense_id FROM Expenses');
+		const dsList = (dsRows || []).map((r) => r.Expenses || r);
+
+		// 1. Delete orphaned rows from Data Store (expenses deleted in Zoho Expense)
+		const orphaned = dsList.filter((item) => {
+			return item.expense_id && !liveExpenseIds.has(String(item.expense_id));
+		});
+
+		if (orphaned.length > 0) {
+			const table = catalystApp.datastore().table('Expenses');
+			for (const row of orphaned) {
+				try {
+					await table.deleteRow(row.ROWID);
+				} catch (_) {}
+			}
+			console.log(`Reconciled: Purged ${orphaned.length} deleted expenses from Catalyst Data Store.`);
+		}
+
+		// 2. Backfill any live Zoho Expense that is missing from Data Store
+		const dsExpenseIds = new Set(dsList.map((item) => String(item.expense_id || '')));
+		const missing = (liveExpenses || []).filter((e) => e.expense_id && !dsExpenseIds.has(String(e.expense_id)));
+		if (missing.length > 0) {
+			const table = catalystApp.datastore().table('Expenses');
+			for (const exp of missing) {
+				try {
+					await table.insertRow({
+						expense_id: String(exp.expense_id),
+						expense_date: exp.date || exp.expense_date || new Date().toISOString().slice(0, 10),
+						amount: Number(exp.amount || exp.total || exp.bcy_total || 0),
+						merchant_name: String(exp.merchant_name || exp.description || 'Expense'),
+						category_name: String(exp.category_name || ''),
+						category_id: String(exp.category_id || ''),
+						currency_code: String(exp.currency_code || 'INR'),
+						currency_id: String(exp.currency_id || cachedCurrencyId || ''),
+						status: String(exp.status || 'unreported'),
+						description: String(exp.description || ''),
+						paid_through_account_name: String(exp.paid_through_account_name || 'Petty Cash'),
+						payment_mode: String(exp.payment_mode || 'Cash'),
+						reference_number: String(exp.reference_number || ''),
+						user_name: String(exp.user_name || ''),
+						user_email: String(exp.user_email || ''),
+						report_name: String(exp.report_name || ''),
+						report_id: String(exp.report_id || '')
+					});
+				} catch (insErr) {
+					console.warn('Failed to backfill expense into Data Store:', insErr.message);
+				}
+			}
+			console.log(`Reconciled: Backfilled ${missing.length} expenses into Catalyst Data Store.`);
+		}
+	} catch (syncErr) {
+		console.warn('Data Store reconciliation skipped:', syncErr.message);
+	}
 }
 
 /**
@@ -394,12 +464,102 @@ async function listCategories(catalystApp, explicitOrgId) {
 	};
 }
 
+/**
+ * Deletes an expense from both Zoho Expense and the Catalyst Data Store
+ * Accepts either a Zoho Expense ID (e.g. '4190897000000038027') or Catalyst Data Store ROWID
+ */
+async function deleteExpense(catalystApp, identifier, explicitOrgId) {
+	const cleanId = String(identifier || '').replace(/['"\\]/g, '').trim();
+	if (!cleanId) {
+		return { ok: false, error: 'Identifier (expense_id or ROWID) is required for deletion.', status: 400 };
+	}
+
+	let zohoExpenseId = cleanId;
+	let dsRowId = null;
+
+	// Check if cleanId matches a ROWID or an expense_id in Catalyst Data Store
+	try {
+		const zcqlRes = await catalystApp.zcql().executeZCQLQuery(
+			`SELECT ROWID, expense_id FROM Expenses WHERE ROWID = '${cleanId}' OR expense_id = '${cleanId}'`
+		);
+		const rows = (zcqlRes || []).map((r) => r.Expenses || r);
+		if (rows.length > 0) {
+			dsRowId = rows[0].ROWID;
+			if (rows[0].expense_id) {
+				zohoExpenseId = rows[0].expense_id;
+			}
+		}
+	} catch (zcqlErr) {
+		console.warn('Data Store lookup before delete warning:', zcqlErr.message);
+	}
+
+	// 1. Delete from Zoho Expense if valid Zoho Expense ID (skip temporary exp_ prefixes)
+	let zohoSuccess = false;
+	let zohoError = null;
+	const orgId = await resolveOrganizationId(catalystApp, explicitOrgId);
+
+	if (orgId && zohoExpenseId && !zohoExpenseId.startsWith('exp_')) {
+		try {
+			const headers = await getConnectionHeaders(catalystApp);
+			const url = `${cachedBaseUrl}/expenses/${encodeURIComponent(zohoExpenseId)}`;
+			const response = await fetch(url, {
+				method: 'DELETE',
+				headers: {
+					...headers,
+					'X-com-zoho-expense-organizationid': String(orgId)
+				}
+			});
+			const data = await response.json();
+			if (response.ok && data.code === 0) {
+				zohoSuccess = true;
+			} else {
+				zohoError = data.message || `HTTP ${response.status}`;
+			}
+		} catch (err) {
+			zohoError = err.message;
+		}
+	}
+
+	// 2. Delete from Catalyst Data Store 'Expenses' table
+	let dsDeleted = false;
+	try {
+		const table = catalystApp.datastore().table('Expenses');
+		if (dsRowId) {
+			await table.deleteRow(dsRowId);
+			dsDeleted = true;
+		} else {
+			const zcqlRes = await catalystApp.zcql().executeZCQLQuery(
+				`SELECT ROWID FROM Expenses WHERE expense_id = '${cleanId}'`
+			);
+			const rows = (zcqlRes || []).map((r) => r.Expenses || r);
+			for (const r of rows) {
+				await table.deleteRow(r.ROWID);
+				dsDeleted = true;
+			}
+		}
+	} catch (dsErr) {
+		console.warn('Failed to delete row from Data Store Expenses table:', dsErr.message);
+	}
+
+	return {
+		ok: true,
+		deletedExpenseId: zohoExpenseId,
+		deletedRowId: dsRowId,
+		zohoSuccess,
+		dsDeleted,
+		zohoError,
+		message: 'Expense deleted from Zoho Expense and Catalyst Data Store'
+	};
+}
+
 module.exports = {
 	getOrganizations,
 	listExpenses,
 	getExpenseSummary,
 	createExpense,
+	deleteExpense,
 	listCategories,
-	listExpensesFromDataStore
+	listExpensesFromDataStore,
+	reconcileDataStoreWithLiveExpenses
 };
 

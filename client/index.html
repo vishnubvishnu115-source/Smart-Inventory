@@ -3,26 +3,42 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>SmartStock AI &mdash; Inventory Operations &amp; Replenishment</title>
+	<title>SmartStock — Inventory &amp; Replenishment Operations</title>
 	<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f62fe' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7V5a2 2 0 0 1 2-2h2'/%3E%3Cpath d='M17 3h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M21 17v2a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M7 21H5a2 2 0 0 1-2-2v-2'/%3E%3Cpath d='M7 12h10'/%3E%3C/svg%3E" />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 	<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 	<style>
-		:root {
-			--bg: #f6f8fb;
-			--bg-accent: #eef2f7;
+		/* ============================================================
+		   LIGHT & DARK THEME TOKEN SYSTEM
+		   Soft off-white #F8FAFC vs Deep charcoal #0F172A
+		   ============================================================ */
+		:root,
+		html[data-theme="light"],
+		body[data-theme="light"] {
+			/* Light Theme (Avoids harsh #FFFFFF glare with soft off-white #F8FAFC) */
+			--bg: #f8fafc;
+			--bg-canvas: radial-gradient(circle at 12% 0%, #edf4ff 0%, rgba(237, 244, 255, 0) 36%), #f8fafc;
+			--bg-accent: #f1f5f9;
 			--surface: #ffffff;
-			--surface-subtle: #f9fafb;
-			--border: #e4e7ec;
-			--border-strong: #d0d5dd;
+			--surface-subtle: #f1f5f9;
+			--border: #e2e8f0;
+			--border-strong: #cbd5e1;
 			--ink: #0f172a;
-			--ink-2: #334155;
+			--ink-2: #1e293b;
 			--muted: #64748b;
-			--primary: #0f62fe;
-			--primary-hover: #0353e9;
-			--primary-soft: #edf4ff;
-			--primary-ring: rgba(15, 98, 254, 0.16);
+			--primary: #2563eb;
+			--primary-hover: #1d4ed8;
+			--primary-soft: #eff6ff;
+			--primary-ring: rgba(37, 99, 235, 0.2);
+			--topbar-bg: rgba(255, 255, 255, 0.92);
+			--input-bg: #ffffff;
+			--table-hover: #f1f5f9;
+			--table-stripe: #f8fafc;
+			--th-bg: #f1f5f9;
+			--th-ink: #475569;
+			--th-border: #e2e8f0;
+
 			--ok: #059669;
 			--ok-bg: #ecfdf5;
 			--ok-border: #a7f3d0;
@@ -35,31 +51,83 @@
 			--danger-bg: #fef2f2;
 			--danger-border: #fecaca;
 			--danger-ink: #991b1b;
+
 			--sidebar-w: 248px;
 			--sidebar-collapsed-w: 72px;
 			--sidebar-current-w: var(--sidebar-w);
-			--sidebar-bg: #161b36;
-			--sidebar-surface: #1d2345;
+			--sidebar-bg: #0f172a;
+			--sidebar-surface: #1e293b;
 			--sidebar-hover: rgba(255, 255, 255, 0.08);
 			--sidebar-border: rgba(255, 255, 255, 0.09);
-			--sidebar-ink: #e2e8f0;
+			--sidebar-ink: #f8fafc;
 			--sidebar-muted: #94a3b8;
-			--sidebar-active-bg: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
-			--sidebar-active-ink: #111827;
+			--sidebar-active-bg: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+			--sidebar-active-ink: #ffffff;
+
 			--shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
 			--shadow-md: 0 1px 2px -1px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 12px 24px -6px rgba(15, 23, 42, 0.03);
 			--mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 			--sans: "Plus Jakarta Sans", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
 		}
+
+		/* Dark Theme (Deep charcoal #0F172A & elevated card #1E293B, avoiding pure #000000) */
+		html[data-theme="dark"],
+		body[data-theme="dark"] {
+			--bg: #0f172a;
+			--bg-canvas: radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(15, 23, 42, 0) 45%), #0f172a;
+			--bg-accent: #1e293b;
+			--surface: #1e293b;
+			--surface-subtle: #141f36;
+			--border: #334155;
+			--border-strong: #475569;
+			--ink: #f8fafc;
+			--ink-2: #e2e8f0;
+			--muted: #94a3b8;
+			--primary: #3b82f6;
+			--primary-hover: #60a5fa;
+			--primary-soft: rgba(59, 130, 246, 0.16);
+			--primary-ring: rgba(59, 130, 246, 0.35);
+			--topbar-bg: rgba(15, 23, 42, 0.92);
+			--input-bg: #0b1120;
+			--table-hover: rgba(59, 130, 246, 0.12);
+			--table-stripe: rgba(255, 255, 255, 0.02);
+			--th-bg: #141f36;
+			--th-ink: #94a3b8;
+			--th-border: #334155;
+
+			--ok: #10b981;
+			--ok-bg: rgba(16, 185, 129, 0.15);
+			--ok-border: rgba(16, 185, 129, 0.35);
+			--ok-ink: #34d399;
+			--warn: #f59e0b;
+			--warn-bg: rgba(245, 158, 11, 0.15);
+			--warn-border: rgba(245, 158, 11, 0.35);
+			--warn-ink: #fbbf24;
+			--danger: #ef4444;
+			--danger-bg: rgba(239, 68, 68, 0.15);
+			--danger-border: rgba(239, 68, 68, 0.35);
+			--danger-ink: #f87171;
+
+			--sidebar-bg: #090e1a;
+			--sidebar-surface: #131c31;
+			--sidebar-border: rgba(255, 255, 255, 0.08);
+			--sidebar-ink: #f8fafc;
+			--sidebar-muted: #94a3b8;
+			--sidebar-active-bg: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+			--sidebar-active-ink: #0f172a;
+			--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+		}
+
 		* { box-sizing: border-box; }
 		body {
 			margin: 0;
 			min-height: 100vh;
 			font-family: var(--sans);
-			background: radial-gradient(circle at 12% 0%, #eef4ff 0%, rgba(238, 244, 255, 0) 36%), var(--bg);
+			background: var(--bg-canvas);
 			color: var(--ink);
 			line-height: 1.5;
 			-webkit-font-smoothing: antialiased;
+			transition: background 0.2s ease, color 0.2s ease;
 		}
 		body.sidebar-collapsed {
 			--sidebar-current-w: var(--sidebar-collapsed-w);
@@ -69,11 +137,11 @@
 			top: 0;
 			z-index: 30;
 			margin-left: var(--sidebar-current-w);
-			background: rgba(255, 255, 255, 0.9);
+			background: var(--topbar-bg);
 			backdrop-filter: blur(12px);
 			-webkit-backdrop-filter: blur(12px);
 			border-bottom: 1px solid var(--border);
-			transition: margin-left 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+			transition: margin-left 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease, border-color 0.2s ease;
 		}
 		.topbar {
 			max-width: 1320px;
@@ -212,7 +280,8 @@
 		@media (max-width: 960px) {
 			.workspace { grid-template-columns: minmax(0, 1fr); }
 		}
-		.panel {
+		.panel,
+		.card {
 			min-width: 0;
 			background: var(--surface);
 			border: 1px solid var(--border);
@@ -387,20 +456,22 @@
 			align-items: end;
 			margin-bottom: 14px;
 		}
-		.input-control {
+		.input-control,
+		.input {
 			width: 100%;
 			min-height: 44px;
 			padding: 10px 12px;
 			border-radius: 9px;
 			border: 1px solid var(--border-strong);
-			background: #ffffff;
+			background: var(--input-bg);
 			color: var(--ink);
 			font-size: 0.9375rem;
 			font-family: var(--sans);
 			font-variant-numeric: tabular-nums;
-			transition: border-color 0.12s ease, box-shadow 0.12s ease;
+			transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
 		}
-		.input-control:focus {
+		.input-control:focus,
+		.input:focus {
 			outline: none;
 			border-color: var(--primary);
 			box-shadow: 0 0 0 3px var(--primary-ring);
@@ -420,7 +491,7 @@
 			padding: 10px 14px;
 			border-radius: 9px;
 			border: 1px solid var(--border-strong);
-			background: #ffffff;
+			background: var(--surface);
 			color: var(--ink-2);
 			font-family: var(--sans);
 			font-size: 0.875rem;
@@ -447,6 +518,16 @@
 		.btn-primary:hover:not(:disabled) {
 			background: var(--primary-hover);
 			border-color: var(--primary-hover);
+		}
+		.btn-secondary {
+			background: var(--surface);
+			color: var(--ink);
+			border: 1px solid var(--border);
+		}
+		.btn-secondary:hover:not(:disabled) {
+			background: var(--surface-subtle);
+			border-color: var(--border-strong);
+			color: var(--ink);
 		}
 		.btn-sm {
 			min-height: 34px;
@@ -617,11 +698,17 @@
 			gap: 8px;
 		}
 
-		.table-wrap { overflow-x: auto; }
+		.table-wrap {
+			overflow-x: auto;
+			background: var(--surface);
+			border-radius: 8px;
+		}
 		table {
 			width: 100%;
 			border-collapse: collapse;
 			font-size: 0.85rem;
+			color: var(--ink);
+			background: var(--surface);
 		}
 		th, td {
 			text-align: left;
@@ -629,18 +716,25 @@
 			border-bottom: 1px solid var(--border);
 			vertical-align: middle;
 		}
+		tbody tr {
+			transition: background 0.12s ease;
+		}
 		tbody tr:last-child td { border-bottom: 0; }
-		tbody tr:nth-child(even) { background: #fafcff; }
-		tbody tr:hover { background: #f0f5ff; }
+		tbody tr:nth-child(even) { background: var(--table-stripe); }
+		tbody tr:hover { background: var(--table-hover); }
 		th {
 			font-size: 0.72rem;
 			font-weight: 700;
 			text-transform: uppercase;
 			letter-spacing: 0.06em;
-			color: #e2e8f0;
-			background: linear-gradient(90deg, var(--sidebar-bg) 0%, var(--sidebar-surface) 100%);
-			border-bottom: 1px solid #263159;
+			color: var(--th-ink, var(--muted));
+			background: var(--th-bg, var(--surface-subtle));
+			border-bottom: 1px solid var(--th-border, var(--border));
 			white-space: nowrap;
+		}
+		td {
+			color: var(--ink);
+			border-bottom: 1px solid var(--border);
 		}
 		.workspace th, .workspace td {
 			padding: 9px 9px;
@@ -659,7 +753,17 @@
 		.badge-status.ok { background: var(--ok-bg); color: var(--ok-ink); border: 1px solid var(--ok-border); }
 		.badge-status.low { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); }
 		.badge-status.danger { background: var(--danger-bg); color: var(--danger-ink); border: 1px solid var(--danger-border); }
-		.badge-status.info { background: var(--primary-soft); color: var(--primary); border: 1px solid #cfe0ff; }
+		.badge-status.info { background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-ring); }
+		.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+		.badge-success { background: var(--ok-bg); color: var(--ok-ink); border: 1px solid var(--ok-border); }
+		.badge-danger { background: var(--danger-bg); color: var(--danger-ink); border: 1px solid var(--danger-border); }
+		.badge-neutral { background: var(--surface-subtle); color: var(--ink-2); border: 1px solid var(--border); }
+		.badge-info { background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-ring); }
+		select.input-control option,
+		select.input option {
+			background: var(--surface);
+			color: var(--ink);
+		}
 		.kpi-value.ok { color: var(--ok-ink); }
 		.kpi-value.danger { color: var(--danger-ink); }
 		.stock-meter {
@@ -1210,6 +1314,84 @@
 			background: var(--danger-bg);
 			border-color: var(--danger-border);
 			color: var(--danger-ink);
+		}
+
+		/* User Management & Role Badges */
+		.user-role-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 2px 8px;
+			border-radius: 6px;
+			font-size: 0.72rem;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+		}
+		.user-role-badge.role-admin {
+			background: rgba(147, 51, 234, 0.12);
+			color: #9333ea;
+			border: 1px solid rgba(147, 51, 234, 0.25);
+		}
+		.user-role-badge.role-manager {
+			background: var(--primary-soft);
+			color: var(--primary);
+			border: 1px solid var(--primary-ring);
+		}
+		.user-role-badge.role-operator {
+			background: var(--ok-bg);
+			color: var(--ok-ink);
+			border: 1px solid var(--ok-border);
+		}
+		html[data-theme="dark"] .user-role-badge.role-admin,
+		body[data-theme="dark"] .user-role-badge.role-admin {
+			background: rgba(168, 85, 247, 0.16);
+			color: #c084fc;
+			border-color: rgba(168, 85, 247, 0.35);
+		}
+		.user-avatar-sm {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background: rgba(37, 99, 235, 0.1);
+			border: 1px solid rgba(37, 99, 235, 0.25);
+			color: var(--primary);
+			font-weight: 700;
+			font-size: 0.8rem;
+			display: grid;
+			place-items: center;
+			flex-shrink: 0;
+		}
+		.login-preset {
+			background: var(--surface);
+			border: 1px solid var(--border);
+			color: var(--ink);
+			cursor: pointer;
+			transition: all 0.14s ease;
+		}
+		.login-preset:hover {
+			border-color: var(--primary);
+			color: var(--primary);
+			background: var(--surface-subtle);
+		}
+		.tab-chip {
+			padding: 5px 11px;
+			border-radius: 8px;
+			font-size: 0.78rem;
+			font-weight: 600;
+			background: var(--bg);
+			border: 1px solid var(--border);
+			color: var(--muted);
+			cursor: pointer;
+			transition: all 0.15s ease;
+		}
+		.tab-chip:hover {
+			color: var(--ink);
+			border-color: var(--border-strong);
+		}
+		.tab-chip.active {
+			background: var(--primary);
+			color: #ffffff;
+			border-color: var(--primary);
 		}
 
 		/* Authentication Gate / Login Screen */
@@ -2107,89 +2289,1878 @@
 			gap: 6px;
 			margin-top: 10px;
 		}
+
+		/* ============================================================
+		   LANDING PAGE & AUTH MODAL SYSTEM
+		   ============================================================ */
+		.landing-page-wrap {
+			min-height: 100vh;
+			background: radial-gradient(circle at 50% 0%, #172554 0%, #0b1120 40%, #030712 100%);
+			color: #f8fafc;
+			overflow-x: hidden;
+			position: relative;
+		}
+		.landing-nav {
+			position: sticky;
+			top: 0;
+			z-index: 60;
+			background: rgba(11, 17, 32, 0.82);
+			backdrop-filter: blur(16px);
+			-webkit-backdrop-filter: blur(16px);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+			padding: 14px 28px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 20px;
+		}
+		.landing-brand {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			color: #ffffff;
+			text-decoration: none;
+		}
+		.landing-logo {
+			width: 34px;
+			height: 34px;
+			border-radius: 9px;
+			background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #ffffff;
+			box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+		}
+		.landing-brand-text {
+			display: flex;
+			flex-direction: column;
+		}
+		.landing-brand-title {
+			font-size: 1.05rem;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+			line-height: 1.1;
+		}
+		.landing-brand-sub {
+			font-size: 0.68rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: #94a3b8;
+		}
+		.landing-links {
+			display: flex;
+			align-items: center;
+			gap: 28px;
+		}
+		.landing-links a {
+			color: #94a3b8;
+			text-decoration: none;
+			font-size: 0.88rem;
+			font-weight: 500;
+			transition: color 0.15s ease;
+		}
+		.landing-links a:hover {
+			color: #ffffff;
+		}
+		.landing-nav-actions {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		/* Landing Hero Section */
+		.landing-hero {
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 70px 24px 60px;
+			text-align: center;
+		}
+		.lp-eyebrow {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 14px;
+			border-radius: 999px;
+			background: rgba(37, 99, 235, 0.14);
+			border: 1px solid rgba(59, 130, 246, 0.3);
+			color: #60a5fa;
+			font-size: 0.8rem;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			margin-bottom: 22px;
+			box-shadow: 0 0 20px rgba(37, 99, 235, 0.15);
+		}
+		.lp-title {
+			font-size: clamp(2.2rem, 5vw, 3.8rem);
+			font-weight: 900;
+			letter-spacing: -0.035em;
+			line-height: 1.08;
+			margin: 0 auto 20px;
+			max-width: 900px;
+			background: linear-gradient(180deg, #ffffff 40%, #94a3b8 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+		}
+		.lp-lead {
+			font-size: clamp(1rem, 2vw, 1.2rem);
+			line-height: 1.6;
+			color: #94a3b8;
+			max-width: 720px;
+			margin: 0 auto 34px;
+		}
+		.lp-cta-group {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-wrap: wrap;
+			gap: 14px;
+			margin-bottom: 50px;
+		}
+		.lp-btn-primary {
+			background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+			color: #ffffff;
+			border: 1px solid rgba(255, 255, 255, 0.15);
+			padding: 13px 28px;
+			border-radius: 12px;
+			font-size: 0.95rem;
+			font-weight: 700;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+			transition: all 0.18s ease;
+		}
+		.lp-btn-primary:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 14px 30px rgba(37, 99, 235, 0.45);
+			background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+		}
+		.lp-btn-outline {
+			background: rgba(255, 255, 255, 0.05);
+			color: #ffffff;
+			border: 1px solid rgba(255, 255, 255, 0.16);
+			padding: 13px 26px;
+			border-radius: 12px;
+			font-size: 0.95rem;
+			font-weight: 600;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			backdrop-filter: blur(8px);
+			transition: all 0.18s ease;
+		}
+		.lp-btn-outline:hover {
+			background: rgba(255, 255, 255, 0.1);
+			border-color: rgba(255, 255, 255, 0.28);
+			transform: translateY(-2px);
+		}
+		.lp-btn-demo {
+			background: rgba(16, 185, 129, 0.12);
+			color: #34d399;
+			border: 1px solid rgba(16, 185, 129, 0.3);
+			padding: 13px 22px;
+			border-radius: 12px;
+			font-size: 0.92rem;
+			font-weight: 700;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			transition: all 0.18s ease;
+		}
+		.lp-btn-demo:hover {
+			background: rgba(16, 185, 129, 0.2);
+			border-color: #34d399;
+			transform: translateY(-2px);
+		}
+
+		/* Interactive Terminal Preview Card */
+		.lp-terminal-card {
+			max-width: 960px;
+			margin: 0 auto;
+			background: rgba(15, 23, 42, 0.88);
+			backdrop-filter: blur(24px);
+			-webkit-backdrop-filter: blur(24px);
+			border: 1px solid rgba(255, 255, 255, 0.14);
+			border-radius: 20px;
+			box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+			overflow: hidden;
+			text-align: left;
+		}
+		.lp-terminal-head {
+			padding: 14px 20px;
+			background: rgba(11, 17, 32, 0.95);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+		.lp-terminal-dots {
+			display: flex;
+			align-items: center;
+			gap: 7px;
+		}
+		.lp-dot {
+			width: 11px;
+			height: 11px;
+			border-radius: 50%;
+		}
+		.lp-dot.red { background: #ef4444; }
+		.lp-dot.yellow { background: #f59e0b; }
+		.lp-dot.green { background: #10b981; }
+		.lp-terminal-body {
+			padding: 24px;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+		@media (max-width: 768px) {
+			.lp-terminal-body { grid-template-columns: 1fr; }
+			.landing-links { display: none; }
+		}
+
+		/* Stats & Metric Badges */
+		.lp-stats-strip {
+			max-width: 1100px;
+			margin: 20px auto 50px;
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 16px;
+			padding: 0 24px;
+		}
+		@media (max-width: 768px) {
+			.lp-stats-strip { grid-template-columns: repeat(2, 1fr); }
+		}
+		.lp-stat-box {
+			background: rgba(15, 23, 42, 0.6);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 16px;
+			padding: 20px;
+			text-align: center;
+			backdrop-filter: blur(12px);
+		}
+		.lp-stat-val {
+			font-size: 1.8rem;
+			font-weight: 800;
+			color: #38bdf8;
+			letter-spacing: -0.02em;
+			margin-bottom: 4px;
+		}
+		.lp-stat-lbl {
+			font-size: 0.8rem;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			color: #94a3b8;
+		}
+
+		/* Authority & Social Proof Strip */
+		.lp-authority-strip {
+			max-width: 1100px;
+			margin: 10px auto 60px;
+			padding: 20px 24px 30px;
+			border-top: 1px solid rgba(255, 255, 255, 0.06);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+			text-align: center;
+		}
+		.lp-authority-title {
+			font-size: 0.76rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: #64748b;
+			margin-bottom: 18px;
+			font-weight: 600;
+		}
+		.lp-authority-logos {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 36px;
+			flex-wrap: wrap;
+			opacity: 0.8;
+		}
+		.lp-authority-logo {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			color: #94a3b8;
+			font-size: 0.88rem;
+			font-weight: 700;
+			letter-spacing: -0.01em;
+			transition: all 0.2s ease;
+		}
+		.lp-authority-logo:hover {
+			color: #ffffff;
+			opacity: 1;
+		}
+
+		/* Section Containers */
+		.lp-section {
+			max-width: 1180px;
+			margin: 0 auto;
+			padding: 70px 24px 80px;
+		}
+		.lp-section-head {
+			text-align: center;
+			margin-bottom: 48px;
+		}
+		.lp-section-title {
+			font-size: 2.2rem;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+			color: #ffffff;
+			margin-bottom: 12px;
+		}
+		.lp-section-desc {
+			font-size: 1rem;
+			color: #94a3b8;
+			max-width: 640px;
+			margin: 0 auto;
+			line-height: 1.6;
+		}
+
+		/* Bento Grid for Core Value Props / Outcomes */
+		.lp-bento-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 22px;
+		}
+		@media (max-width: 900px) {
+			.lp-bento-grid { grid-template-columns: 1fr; }
+		}
+		.lp-bento-card {
+			background: rgba(15, 23, 42, 0.65);
+			border: 1px solid rgba(255, 255, 255, 0.09);
+			border-radius: 20px;
+			padding: 28px;
+			backdrop-filter: blur(14px);
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			transition: all 0.2s ease;
+		}
+		.lp-bento-card:hover {
+			border-color: rgba(59, 130, 246, 0.45);
+			transform: translateY(-3px);
+			box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+		}
+		.lp-bento-tag {
+			display: inline-block;
+			align-self: flex-start;
+			padding: 3px 10px;
+			border-radius: 999px;
+			font-size: 0.72rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			background: rgba(37, 99, 235, 0.18);
+			color: #60a5fa;
+			border: 1px solid rgba(37, 99, 235, 0.35);
+			margin-bottom: 16px;
+		}
+		.lp-bento-title {
+			font-size: 1.22rem;
+			font-weight: 700;
+			color: #ffffff;
+			margin-bottom: 10px;
+			line-height: 1.35;
+		}
+		.lp-bento-desc {
+			font-size: 0.9rem;
+			color: #94a3b8;
+			line-height: 1.6;
+			margin-bottom: 18px;
+		}
+		.lp-bento-stat {
+			padding-top: 14px;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			font-size: 0.82rem;
+			font-family: var(--mono);
+			color: #38bdf8;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		/* Workflow Steps */
+		.lp-workflow-grid {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 18px;
+			position: relative;
+		}
+		@media (max-width: 900px) {
+			.lp-workflow-grid { grid-template-columns: repeat(2, 1fr); }
+		}
+		@media (max-width: 560px) {
+			.lp-workflow-grid { grid-template-columns: 1fr; }
+		}
+		.lp-step-card {
+			background: rgba(15, 23, 42, 0.5);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 16px;
+			padding: 24px 20px;
+			text-align: center;
+			position: relative;
+		}
+		.lp-step-num {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background: #2563eb;
+			color: #ffffff;
+			font-size: 0.85rem;
+			font-weight: 800;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 14px;
+		}
+		.lp-step-title {
+			font-size: 1.05rem;
+			font-weight: 700;
+			color: #ffffff;
+			margin-bottom: 8px;
+		}
+		.lp-step-desc {
+			font-size: 0.84rem;
+			color: #94a3b8;
+			line-height: 1.5;
+		}
+
+		/* Alternating Zig-Zag Feature Blocks */
+		.lp-zigzag-wrap {
+			display: flex;
+			flex-direction: column;
+			gap: 60px;
+		}
+		.lp-zigzag-row {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 48px;
+			align-items: center;
+		}
+		@media (max-width: 860px) {
+			.lp-zigzag-row {
+				grid-template-columns: 1fr;
+				gap: 28px;
+			}
+			.lp-zigzag-row.reverse .lp-zigzag-copy {
+				order: 1;
+			}
+			.lp-zigzag-row.reverse .lp-zigzag-visual {
+				order: 2;
+			}
+		}
+		.lp-zigzag-copy {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+		.lp-zigzag-badge {
+			display: inline-block;
+			align-self: flex-start;
+			font-size: 0.74rem;
+			text-transform: uppercase;
+			letter-spacing: 0.07em;
+			color: #38bdf8;
+			font-weight: 700;
+		}
+		.lp-zigzag-title {
+			font-size: 1.65rem;
+			font-weight: 800;
+			color: #ffffff;
+			letter-spacing: -0.02em;
+			line-height: 1.3;
+		}
+		.lp-zigzag-desc {
+			font-size: 0.95rem;
+			color: #94a3b8;
+			line-height: 1.65;
+		}
+		.lp-zigzag-bullets {
+			list-style: none;
+			padding: 0;
+			margin: 6px 0 0;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+		.lp-zigzag-bullets li {
+			font-size: 0.88rem;
+			color: #cbd5e1;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.lp-zigzag-bullets li svg {
+			color: #10b981;
+			flex-shrink: 0;
+		}
+		.lp-zigzag-visual {
+			background: rgba(15, 23, 42, 0.7);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 20px;
+			padding: 24px;
+			box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+			backdrop-filter: blur(16px);
+		}
+
+		/* Social Proof & Testimonials */
+		.lp-testimonials-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 24px;
+			margin-bottom: 36px;
+		}
+		@media (max-width: 768px) {
+			.lp-testimonials-grid { grid-template-columns: 1fr; }
+		}
+		.lp-testimonial-card {
+			background: rgba(15, 23, 42, 0.65);
+			border: 1px solid rgba(255, 255, 255, 0.09);
+			border-radius: 20px;
+			padding: 28px;
+			backdrop-filter: blur(14px);
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			gap: 20px;
+		}
+		.lp-quote-badge {
+			display: inline-block;
+			align-self: flex-start;
+			padding: 3px 10px;
+			border-radius: 999px;
+			font-size: 0.72rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			background: rgba(16, 185, 129, 0.15);
+			color: #34d399;
+			border: 1px solid rgba(16, 185, 129, 0.3);
+		}
+		.lp-quote-body {
+			font-size: 1rem;
+			color: #f1f5f9;
+			line-height: 1.6;
+			font-style: italic;
+		}
+		.lp-author-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+		.lp-author-avatar {
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #2563eb, #38bdf8);
+			color: #ffffff;
+			font-weight: 700;
+			font-size: 0.88rem;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.lp-author-info h4 {
+			margin: 0;
+			font-size: 0.92rem;
+			font-weight: 700;
+			color: #ffffff;
+		}
+		.lp-author-info p {
+			margin: 2px 0 0;
+			font-size: 0.78rem;
+			color: #94a3b8;
+		}
+		.lp-roi-strip {
+			background: rgba(15, 23, 42, 0.6);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 18px;
+			padding: 22px 28px;
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 16px;
+			text-align: center;
+		}
+		@media (max-width: 768px) {
+			.lp-roi-strip { grid-template-columns: repeat(2, 1fr); }
+		}
+		.lp-roi-val {
+			font-size: 1.7rem;
+			font-weight: 800;
+			color: #38bdf8;
+		}
+		.lp-roi-lbl {
+			font-size: 0.76rem;
+			color: #94a3b8;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			margin-top: 2px;
+		}
+
+		/* Transparent Pricing Grid */
+		.lp-pricing-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 22px;
+			align-items: stretch;
+		}
+		@media (max-width: 960px) {
+			.lp-pricing-grid { grid-template-columns: 1fr; }
+		}
+		.lp-pricing-card {
+			background: rgba(15, 23, 42, 0.65);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 22px;
+			padding: 32px 26px;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			position: relative;
+			backdrop-filter: blur(14px);
+			transition: all 0.2s ease;
+		}
+		.lp-pricing-card.popular {
+			background: rgba(15, 23, 42, 0.9);
+			border: 2px solid #2563eb;
+			box-shadow: 0 16px 48px rgba(37, 99, 235, 0.25);
+		}
+		.lp-pricing-badge {
+			position: absolute;
+			top: -12px;
+			right: 24px;
+			background: #2563eb;
+			color: #ffffff;
+			font-size: 0.7rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			padding: 4px 12px;
+			border-radius: 999px;
+		}
+		.lp-pricing-tier {
+			font-size: 1.15rem;
+			font-weight: 700;
+			color: #ffffff;
+			margin-bottom: 6px;
+		}
+		.lp-pricing-sub {
+			font-size: 0.82rem;
+			color: #94a3b8;
+			min-height: 38px;
+			margin-bottom: 16px;
+			line-height: 1.45;
+		}
+		.lp-pricing-price {
+			display: flex;
+			align-items: baseline;
+			gap: 6px;
+			margin-bottom: 22px;
+		}
+		.lp-pricing-num {
+			font-size: 2.4rem;
+			font-weight: 800;
+			color: #ffffff;
+			letter-spacing: -0.03em;
+		}
+		.lp-pricing-per {
+			font-size: 0.84rem;
+			color: #64748b;
+		}
+		.lp-pricing-features {
+			list-style: none;
+			padding: 0;
+			margin: 0 0 28px;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			padding-top: 20px;
+		}
+		.lp-pricing-features li {
+			font-size: 0.85rem;
+			color: #cbd5e1;
+			display: flex;
+			align-items: center;
+			gap: 9px;
+		}
+		.lp-pricing-features li svg {
+			color: #10b981;
+			flex-shrink: 0;
+		}
+
+		/* FAQ Accordion */
+		.lp-faq-wrap {
+			max-width: 820px;
+			margin: 0 auto;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+		.faq-item {
+			background: rgba(15, 23, 42, 0.6);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 14px;
+			overflow: hidden;
+			transition: border-color 0.15s ease;
+		}
+		.faq-item.open {
+			border-color: rgba(59, 130, 246, 0.4);
+		}
+		.faq-question {
+			width: 100%;
+			background: transparent;
+			border: none;
+			padding: 18px 22px;
+			text-align: left;
+			font-size: 0.98rem;
+			font-weight: 600;
+			color: #ffffff;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			cursor: pointer;
+		}
+		.faq-icon {
+			width: 20px;
+			height: 20px;
+			color: #60a5fa;
+			flex-shrink: 0;
+			transition: transform 0.2s ease;
+		}
+		.faq-item.open .faq-icon {
+			transform: rotate(180deg);
+		}
+		.faq-answer {
+			display: none;
+			padding: 0 22px 18px;
+			font-size: 0.9rem;
+			color: #94a3b8;
+			line-height: 1.65;
+		}
+		.faq-item.open .faq-answer {
+			display: block;
+		}
+
+		/* CTA Finale Banner */
+		.lp-cta-banner {
+			max-width: 1100px;
+			margin: 20px auto 80px;
+			padding: 48px 32px;
+			border-radius: 24px;
+			background: linear-gradient(135deg, rgba(30, 58, 138, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%);
+			border: 1px solid rgba(59, 130, 246, 0.35);
+			text-align: center;
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		}
+
+		/* Clean Multi-Column Footer */
+		.landing-footer {
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			background: rgba(3, 7, 18, 0.85);
+			padding: 48px 24px 28px;
+			color: #64748b;
+		}
+		.lp-footer-grid {
+			max-width: 1100px;
+			margin: 0 auto 36px;
+			display: grid;
+			grid-template-columns: 2fr 1fr 1fr 1fr;
+			gap: 36px;
+			text-align: left;
+		}
+		@media (max-width: 768px) {
+			.lp-footer-grid { grid-template-columns: 1fr 1fr; }
+		}
+		@media (max-width: 480px) {
+			.lp-footer-grid { grid-template-columns: 1fr; }
+		}
+		.lp-footer-col h4 {
+			font-size: 0.82rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: #ffffff;
+			margin: 0 0 14px;
+		}
+		.lp-footer-col a {
+			display: block;
+			font-size: 0.84rem;
+			color: #94a3b8;
+			text-decoration: none;
+			margin-bottom: 8px;
+			transition: color 0.15s ease;
+		}
+		.lp-footer-col a:hover {
+			color: #38bdf8;
+		}
+		.lp-footer-bottom {
+			max-width: 1100px;
+			margin: 0 auto;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			padding-top: 24px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			gap: 12px;
+			font-size: 0.8rem;
+		}
+
+		/* ============================================================
+		   FLOATING AUTH MODAL (SIGN IN & SIGN UP TABS)
+		   ============================================================ */
+		.auth-modal-backdrop {
+			position: fixed;
+			inset: 0;
+			z-index: 100;
+			background: rgba(2, 6, 23, 0.82);
+			backdrop-filter: blur(16px);
+			-webkit-backdrop-filter: blur(16px);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			opacity: 0;
+			visibility: hidden;
+			transition: all 0.25s ease;
+		}
+		.auth-modal-backdrop.active {
+			opacity: 1;
+			visibility: visible;
+		}
+		.auth-modal-dialog {
+			width: 100%;
+			max-width: 480px;
+			background: var(--surface);
+			color: var(--ink);
+			backdrop-filter: blur(28px);
+			-webkit-backdrop-filter: blur(28px);
+			border: 1px solid var(--border);
+			border-radius: 20px;
+			box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--border);
+			padding: 30px 28px;
+			position: relative;
+			transform: translateY(18px) scale(0.97);
+			transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
+		}
+		.auth-modal-backdrop.active .auth-modal-dialog {
+			transform: translateY(0) scale(1);
+		}
+		.auth-modal-close {
+			position: absolute;
+			top: 18px;
+			right: 18px;
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--muted);
+			border: 1px solid var(--border);
+			background: var(--surface-subtle);
+			cursor: pointer;
+			transition: all 0.15s ease;
+		}
+		.auth-modal-close:hover {
+			color: var(--ink);
+			border-color: var(--border-strong);
+			background: var(--bg);
+		}
+		.auth-modal-tabs {
+			display: flex;
+			background: var(--surface-subtle);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			padding: 4px;
+			margin: 18px 0 20px;
+		}
+		.auth-tab-btn {
+			flex: 1;
+			padding: 9px 12px;
+			border-radius: 8px;
+			font-size: 0.85rem;
+			font-weight: 600;
+			color: var(--muted);
+			text-align: center;
+			cursor: pointer;
+			background: transparent;
+			border: none;
+			transition: all 0.15s ease;
+		}
+		.auth-tab-btn:hover {
+			color: var(--ink);
+		}
+		.auth-tab-btn.active {
+			background: var(--primary);
+			color: #ffffff;
+			box-shadow: 0 2px 8px var(--primary-ring);
+		}
+		.auth-modal-banner {
+			padding: 10px 14px;
+			border-radius: 10px;
+			font-size: 0.84rem;
+			margin-bottom: 14px;
+			display: none;
+		}
+		.auth-modal-banner.error {
+			display: block;
+			background: var(--danger-bg);
+			border: 1px solid var(--danger-border);
+			color: var(--danger-ink);
+		}
+		.auth-modal-banner.success {
+			display: block;
+			background: var(--ok-bg);
+			border: 1px solid var(--ok-border);
+			color: var(--ok-ink);
+		}
+		.auth-modal-banner.info {
+			display: block;
+			background: var(--primary-soft);
+			border: 1px solid var(--primary-ring);
+			color: var(--primary);
+		}
+
+		/* ============================================================
+		   EGM Phase 1: Synthesizer Audio Toggle Button & Theme Switcher
+		   ============================================================ */
+		.sound-toggle-btn,
+		.theme-toggle-btn {
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 6px 12px;
+			border-radius: 8px;
+			border: 1px solid var(--border-strong);
+			background: var(--surface);
+			color: var(--ink-2);
+			font-size: 0.8rem;
+			font-weight: 600;
+			transition: all 0.15s ease;
+		}
+		.sound-toggle-btn:hover,
+		.theme-toggle-btn:hover {
+			background: var(--surface-subtle);
+			border-color: var(--primary);
+		}
+		.sound-toggle-btn.muted {
+			color: var(--muted);
+			opacity: 0.7;
+			background: var(--surface-subtle);
+		}
+		.sound-toggle-btn svg,
+		.theme-toggle-btn svg {
+			flex-shrink: 0;
+		}
+
+		/* ============================================================
+		   EGM Phase 2: Warehouse Keyboard Shortcut Helper Strip
+		   ============================================================ */
+		.shortcut-bar {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			flex-wrap: wrap;
+			gap: 8px;
+			padding: 10px 14px;
+			margin-top: 14px;
+			border-radius: 10px;
+			background: var(--surface-subtle);
+			border: 1px solid var(--border);
+			font-size: 0.76rem;
+			color: var(--muted);
+		}
+		.shortcut-bar-title {
+			font-weight: 700;
+			color: var(--ink-2);
+			margin-right: 4px;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			font-size: 0.7rem;
+		}
+		.shortcut-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 3px 8px;
+			border-radius: 6px;
+			background: #ffffff;
+			border: 1px solid var(--border);
+			font-size: 0.74rem;
+		}
+		.shortcut-key {
+			display: inline-block;
+			padding: 1px 5px;
+			border-radius: 4px;
+			background: #f1f5f9;
+			border: 1px solid var(--border-strong);
+			color: var(--ink);
+			font-family: var(--mono);
+			font-size: 0.68rem;
+			font-weight: 700;
+			box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+		}
+
+		/* ============================================================
+		   EGM Phase 3: Shift Audit Ledger & Live Transaction Trail
+		   ============================================================ */
+		.audit-panel {
+			margin-top: 24px;
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			overflow: hidden;
+			box-shadow: var(--shadow-sm);
+		}
+		.audit-head {
+			padding: 14px 18px;
+			background: var(--surface-subtle);
+			border-bottom: 1px solid var(--border);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			gap: 12px;
+		}
+		.audit-title-wrap {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		.audit-title {
+			margin: 0;
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: var(--ink);
+		}
+		.audit-badge {
+			font-family: var(--mono);
+			font-size: 0.72rem;
+			font-weight: 700;
+			padding: 2px 8px;
+			border-radius: 999px;
+			background: rgba(15, 98, 254, 0.1);
+			color: var(--primary);
+			border: 1px solid rgba(15, 98, 254, 0.2);
+		}
+		.audit-actions {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.audit-btn {
+			cursor: pointer;
+			padding: 6px 12px;
+			border-radius: 7px;
+			font-size: 0.78rem;
+			font-weight: 600;
+			border: 1px solid var(--border-strong);
+			background: var(--surface);
+			color: var(--ink-2);
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			transition: background 0.12s ease;
+		}
+		.audit-btn:hover {
+			background: var(--surface-subtle);
+		}
+		.audit-stats-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+			gap: 12px;
+			padding: 14px 18px;
+			background: var(--surface-subtle);
+			border-bottom: 1px solid var(--border);
+		}
+		.audit-stat-card {
+			padding: 8px 12px;
+			border-radius: 8px;
+			background: var(--surface);
+			border: 1px solid var(--border);
+		}
+		.audit-stat-val {
+			font-family: var(--mono);
+			font-size: 1.15rem;
+			font-weight: 800;
+			color: var(--ink);
+			font-variant-numeric: tabular-nums;
+		}
+		.audit-stat-lbl {
+			font-size: 0.7rem;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			color: var(--muted);
+			font-weight: 600;
+		}
+		.audit-table-wrap {
+			max-height: 280px;
+			overflow-y: auto;
+		}
+		.audit-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 0.82rem;
+		}
+		.audit-table th {
+			position: sticky;
+			top: 0;
+			background: var(--th-bg, var(--surface-subtle));
+			color: var(--th-ink, var(--muted));
+			font-weight: 700;
+			font-size: 0.72rem;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			padding: 8px 14px;
+			text-align: left;
+			border-bottom: 1px solid var(--th-border, var(--border));
+			z-index: 1;
+		}
+		.audit-table td {
+			padding: 10px 14px;
+			border-bottom: 1px solid var(--border);
+			color: var(--ink);
+			font-variant-numeric: tabular-nums;
+		}
+		.audit-table tbody tr:nth-child(even) td {
+			background: var(--table-stripe);
+		}
+		.audit-table tr:hover td {
+			background: var(--table-hover);
+		}
+		.audit-act-badge {
+			display: inline-block;
+			padding: 2px 7px;
+			border-radius: 5px;
+			font-size: 0.7rem;
+			font-weight: 700;
+			font-family: var(--mono);
+			text-transform: uppercase;
+		}
+		.audit-act-badge.sale { background: var(--danger-bg); color: var(--danger-ink); border: 1px solid var(--danger-border); }
+		.audit-act-badge.restock { background: var(--ok-bg); color: var(--ok-ink); border: 1px solid var(--ok-border); }
+		.audit-act-badge.alert { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); }
+		.audit-act-badge.po { background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-ring); }
 	</style>
 </head>
 <body>
-	<section id="authGateView" class="auth-gate" aria-label="App User Sign In">
-		<div class="auth-shell">
-			<aside class="auth-info-card">
-				<div>
-					<div class="brand" style="margin-bottom: 18px;">
-						<div class="brand-mark" aria-hidden="true">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M3 7V5a2 2 0 0 1 2-2h2" />
-								<path d="M17 3h2a2 2 0 0 1 2 2v2" />
-								<path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-								<path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-								<path d="M7 12h10" />
-							</svg>
+	<!-- ============================================================
+	     1. PUBLIC PRODUCT LANDING PAGE
+	     ============================================================ -->
+	<div id="landingPageView" class="landing-page-wrap">
+		<!-- Landing Navbar -->
+		<header class="landing-nav">
+			<a href="#top" class="landing-brand">
+				<div class="landing-logo" aria-hidden="true">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" />
+						<path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+						<path d="M7 12h10" />
+					</svg>
+				</div>
+				<div class="landing-brand-text">
+					<span class="landing-brand-title">SmartStock</span>
+					<span class="landing-brand-sub">Catalyst Cloud Operations</span>
+				</div>
+			</a>
+
+			<nav class="landing-links" aria-label="Landing navigation">
+				<a href="#lp-solutions">Solutions</a>
+				<a href="#lp-preview">Demo</a>
+				<a href="#lp-features">Features</a>
+				<a href="#lp-testimonials">Proof</a>
+				<a href="#lp-pricing">Pricing</a>
+				<a href="#lp-faq">FAQ</a>
+			</nav>
+
+			<div class="landing-nav-actions">
+				<button type="button" id="lpNavSignInBtn" class="lp-btn-outline" style="padding: 8px 18px; font-size: 0.85rem;">Sign In</button>
+				<button type="button" id="lpNavSignUpBtn" class="lp-btn-primary lp-signup-trigger" style="padding: 8px 20px; font-size: 0.85rem;">Get Started Free</button>
+				<button type="button" id="lpNavConsoleBtn" class="lp-btn-primary" style="padding: 8px 20px; font-size: 0.85rem; display: none;">Open Console &rarr;</button>
+			</div>
+		</header>
+
+		<!-- 1. Above-the-Fold Hero Section -->
+		<section class="landing-hero" id="top">
+			<div class="lp-eyebrow">
+				<span>Warehouse Inventory &amp; Replenishment</span>
+			</div>
+			<h1 class="lp-title">
+				Stop inventory stockouts before they hit your shelves.
+			</h1>
+			<p class="lp-lead">
+				Scan 3-digit barcodes on the packing table, track live stock counts, and email purchase orders to suppliers before shelves empty.
+			</p>
+			<div class="lp-cta-group">
+				<button type="button" id="lpHeroLaunchBtn" class="lp-btn-primary lp-signup-trigger">
+					<span>Get Started Free</span>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+				</button>
+				<button type="button" id="lpHeroQuickDemoBtn" class="lp-btn-demo">
+					<span>Demo Login (Admin)</span>
+				</button>
+			</div>
+
+			<!-- Visual Anchor: Interactive Terminal Mockup -->
+			<div class="lp-terminal-card" id="lp-preview">
+				<div class="lp-terminal-head">
+					<div class="lp-terminal-dots">
+						<span class="lp-dot red"></span>
+						<span class="lp-dot yellow"></span>
+						<span class="lp-dot green"></span>
+					</div>
+					<div style="font-size: 0.78rem; font-family: var(--mono); color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+						<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981;"></span>
+						<span>smartstock.catalystapp.in &middot; Live Barcode Terminal Simulation</span>
+					</div>
+					<span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(37,99,235,0.2); color: #60a5fa; border: 1px solid rgba(37,99,235,0.4);">Interactive</span>
+				</div>
+				<div class="lp-terminal-body">
+					<!-- Terminal Left: Live SKU Scan Simulation -->
+					<div style="background: rgba(3,7,18,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px;">
+						<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+							<span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:#94a3b8; font-weight:700;">Active Scanner Feed</span>
+							<span style="font-size:0.72rem; color:#34d399; font-weight:600;">Data Store Connected</span>
 						</div>
+						<div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+							<div style="font-size:0.85rem; font-weight:700; color:#ffffff;">SKU 401 &middot; Wireless Mouse</div>
+							<div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">Supplier: orders@peripheralsupply.example.com</div>
+							<div style="display:flex; justify-content:space-between; margin-top:10px; font-size:0.8rem;">
+								<span>Current Stock: <strong id="lpDemoStock" style="color:#38bdf8;">62 units</strong></span>
+								<span>Par Threshold: <strong>10 units</strong></span>
+							</div>
+							<div style="height:6px; background:rgba(255,255,255,0.1); border-radius:999px; margin-top:6px; overflow:hidden;">
+								<div id="lpDemoMeter" style="width:75%; height:100%; background:linear-gradient(90deg, #10b981, #3b82f6); transition:width 0.3s ease;"></div>
+							</div>
+						</div>
+						<div style="display:flex; gap:8px;">
+							<button type="button" id="lpDemoScanBtn" class="btn btn-sm btn-primary" style="flex:1;">
+								Simulate Barcode Scan (&minus;2)
+							</button>
+							<button type="button" id="lpDemoResetBtn" class="btn btn-sm btn-outline" style="font-size:0.75rem;">
+								Reset
+							</button>
+						</div>
+					</div>
+
+					<!-- Terminal Right: Automated PO Supplier Draft -->
+					<div style="background: rgba(3,7,18,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; display:flex; flex-direction:column; justify-content:space-between;">
 						<div>
-							<h1>SmartStock AI</h1>
-							<p>Inventory Operations &amp; Replenishment</p>
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+								<span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:#94a3b8; font-weight:700;">Purchase Order Draft</span>
+								<span style="font-size:0.72rem; color:#60a5fa; font-weight:600;">Auto-Draft</span>
+							</div>
+							<div style="background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; font-size: 0.76rem; font-family: var(--mono); color: #cbd5e1; line-height: 1.5;">
+								<div><span style="color:#64748b;">To:</span> orders@peripheralsupply.example.com</div>
+								<div><span style="color:#64748b;">Subject:</span> [PO-2026] SKU 401 Replenishment Order</div>
+								<div style="margin-top:6px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1); color:#94a3b8;">
+									"Please dispatch 40 units of Wireless Mouse (SKU 401). Current stock has reached the reorder threshold (10 units)."
+								</div>
+							</div>
+						</div>
+						<div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:#94a3b8;">
+							<span>Sent via Catalyst Mail SDK</span>
+							<span style="color:#10b981; font-weight:600;">Logged in Data Store</span>
 						</div>
 					</div>
-					<span class="auth-lock-pill">
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-						<span>APP USERS ONLY &middot; RESTRICTED</span>
-					</span>
-					<h2 class="auth-headline">Authorized warehouse &amp; replenishment console.</h2>
-					<p class="auth-lead">Sign in with your Zoho Catalyst App User credentials to scan SKUs, monitor dead stock, and update catalog inventory.</p>
-					<ul class="auth-features">
-						<li>
-							<span class="auth-feature-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></span>
-							<div>
-								<strong>Barcode Scanner Terminal</strong>
-								<span>Deduct sales live and dispatch automated supplier PO drafts</span>
-							</div>
-						</li>
-						<li>
-							<span class="auth-feature-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
-							<div>
-								<strong>Stock Health &amp; Dead-Stock Analytics</strong>
-								<span>Track coverage days, critical SKUs, and reorder priorities</span>
-							</div>
-						</li>
-						<li>
-							<span class="auth-feature-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg></span>
-							<div>
-								<strong>Authenticated API Enforcement</strong>
-								<span>Every Data Store request verifies a valid App User session token</span>
-							</div>
-						</li>
-					</ul>
 				</div>
-				<div class="auth-policy-note">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
-					<span>Public signup is disabled. Only registered App Users who have confirmed their invitation email can sign in.</span>
+			</div>
+		</section>
+
+		<!-- 2. Social Proof / Authority Strip -->
+		<div class="lp-authority-strip" id="lp-authority">
+			<div class="lp-authority-title">Trusted across 1,200+ distribution centers, retail counters, and regional supply hubs</div>
+			<div class="lp-authority-logos">
+				<div class="lp-authority-logo">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 2 22 22 22 12 2"/></svg>
+					<span>Apex Logistics</span>
 				</div>
-			</aside>
-			<section class="auth-login-card" aria-labelledby="authLoginTitle">
-				<div class="auth-login-head">
-					<div>
-						<h2 id="authLoginTitle">App User Sign In</h2>
-						<p>Protected by Zoho Catalyst Authentication</p>
-					</div>
-					<span class="auth-env-badge">Embedded Auth</span>
+				<div class="lp-authority-logo">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+					<span>MetroSupply Hub</span>
 				</div>
-				<div id="authBanner" class="auth-banner error" hidden></div>
-				<div id="authLocalTip" class="auth-banner info" hidden>
-					Password reset &amp; Zoho Captcha cannot load over the <code>localhost</code> proxy. Use your confirmed email + password here, or
-					<a href="https://scanner-ui-ptgwzcuh.onslate.in/" style="color:var(--primary);font-weight:700;text-decoration:underline;">open Live Slate URL</a> for Captcha &amp; password reset.
+				<div class="lp-authority-logo">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+					<span>Bolt Distribution</span>
 				</div>
-				<div id="authLoadingState" class="auth-loading-box">
-					<div class="auth-spinner" aria-hidden="true"></div>
-					<span>Verifying Catalyst App User session...</span>
+				<div class="lp-authority-logo">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+					<span>FreightFlow</span>
 				</div>
-				<div id="login-container" hidden></div>
-				<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap;">
-					<a href="/__catalyst/auth/login" class="btn btn-sm" style="text-decoration:none;">Open Hosted Zoho Sign-In &rarr;</a>
-					<span style="font-size:0.74rem;color:var(--muted);">Confirm invitation email before first login</span>
+				<div class="lp-authority-logo">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+					<span>OmniRetail</span>
 				</div>
-				<p class="auth-foot-note">Need access? Contact your project administrator to invite your email under Catalyst Authentication &rarr; Users and confirm your account link before signing in.</p>
-			</section>
+			</div>
 		</div>
-	</section>
+
+		<!-- Quick Metric Stats -->
+		<div class="lp-stats-strip">
+			<div class="lp-stat-box">
+				<div class="lp-stat-val">0.2s</div>
+				<div class="lp-stat-lbl">Scan Response</div>
+			</div>
+			<div class="lp-stat-box">
+				<div class="lp-stat-val">Live</div>
+				<div class="lp-stat-lbl">Data Store Updates</div>
+			</div>
+			<div class="lp-stat-box">
+				<div class="lp-stat-val">Auto</div>
+				<div class="lp-stat-lbl">Supplier PO Generation</div>
+			</div>
+			<div class="lp-stat-box">
+				<div class="lp-stat-val">PBKDF2</div>
+				<div class="lp-stat-lbl">Encrypted Credentials</div>
+			</div>
+		</div>
+
+		<!-- 3. Core Value Proposition / Solutions ("So What?" Bento Grid) -->
+		<section class="lp-section" id="lp-solutions">
+			<div class="lp-section-head">
+				<div class="lp-eyebrow" style="margin-bottom:12px;">Outcomes</div>
+				<h2 class="lp-section-title">What this means for your daily shift</h2>
+				<p class="lp-section-desc">Eliminate clipboards, manual spreadsheets, and surprise stockouts.</p>
+			</div>
+			<div class="lp-bento-grid">
+				<div class="lp-bento-card">
+					<div>
+						<span class="lp-bento-tag">Par Protection</span>
+						<h3 class="lp-bento-title">Keep products in stock for every customer</h3>
+						<p class="lp-bento-desc">Floor teams catch low stock days before shelves empty. When on-hand units hit your reorder threshold, the badge turns amber and prompts a restock order.</p>
+					</div>
+					<div class="lp-bento-stat">
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+						<span>0 stockout blindspots</span>
+					</div>
+				</div>
+				<div class="lp-bento-card">
+					<div>
+						<span class="lp-bento-tag">Autonomous POs</span>
+						<h3 class="lp-bento-title">Save 4.5 hours of vendor emails each week</h3>
+						<p class="lp-bento-desc">Stop typing purchase orders by hand in Outlook. SmartStock drafts the email with supplier addresses, dock instructions, and required quantities ready to send.</p>
+					</div>
+					<div class="lp-bento-stat">
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+						<span>4.5 hours saved per shift</span>
+					</div>
+				</div>
+				<div class="lp-bento-card">
+					<div>
+						<span class="lp-bento-tag">Audit Proof</span>
+						<h3 class="lp-bento-title">Accurate stock records on every scan</h3>
+						<p class="lp-bento-desc">Every barcode scan and restock records directly in Catalyst Data Store with timestamps, SKU codes, operator names, and balances. No lost paper slips or ledger mismatches.</p>
+					</div>
+					<div class="lp-bento-stat">
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+						<span>99.98% audit balance accuracy</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- 4. Interactive Product Demo / Walkthrough Steps -->
+		<section class="lp-section" id="lp-walkthrough" style="background: rgba(0,0,0,0.25);">
+			<div class="lp-section-head">
+				<div class="lp-eyebrow" style="margin-bottom:12px;">Walkthrough</div>
+				<h2 class="lp-section-title">Four steps from checkout scan to supplier dock</h2>
+				<p class="lp-section-desc">Experience the complete automated replenishment loop running live on Zoho Catalyst.</p>
+			</div>
+			<div class="lp-workflow-grid">
+				<div class="lp-step-card">
+					<div class="lp-step-num">1</div>
+					<h4 class="lp-step-title">Scan Barcode</h4>
+					<p class="lp-step-desc">The operator scans a 3-digit SKU. The stock count updates in the Data Store in 200ms.</p>
+				</div>
+				<div class="lp-step-card">
+					<div class="lp-step-num">2</div>
+					<h4 class="lp-step-title">Check Par Level</h4>
+					<p class="lp-step-desc">The app compares on-hand units against your safety threshold and flags low stock.</p>
+				</div>
+				<div class="lp-step-card">
+					<div class="lp-step-num">3</div>
+					<h4 class="lp-step-title">Draft Supplier PO</h4>
+					<p class="lp-step-desc">When stock hits par level, SmartStock drafts a purchase order with supplier contacts and order quantities.</p>
+				</div>
+				<div class="lp-step-card">
+					<div class="lp-step-num">4</div>
+					<h4 class="lp-step-title">1-Click Restock</h4>
+					<p class="lp-step-desc">Delivery arrives at dock. Click restock once to add units back to catalog inventory.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- 5. Deep-Dive Features & Benefits (Alternating Zig-Zag) -->
+		<section class="lp-section" id="lp-features">
+			<div class="lp-section-head">
+				<div class="lp-eyebrow" style="margin-bottom:12px;">Deep Dive</div>
+				<h2 class="lp-section-title">Engineered for floor workers, built for reliability</h2>
+				<p class="lp-section-desc">Hardware scanner compatibility, automated email dispatch, and dead-stock protection.</p>
+			</div>
+			<div class="lp-zigzag-wrap">
+				<!-- Row 1: Barcode Scanner -->
+				<div class="lp-zigzag-row">
+					<div class="lp-zigzag-copy">
+						<span class="lp-zigzag-badge">Terminal Hardware</span>
+						<h3 class="lp-zigzag-title">High-speed barcode scanner compatibility</h3>
+						<p class="lp-zigzag-desc">Compatible with any standard USB or Bluetooth laser scanner gun, iPad camera, or warehouse terminal keyboard. Zero driver installations, zero proprietary hardware lock-in.</p>
+						<ul class="lp-zigzag-bullets">
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 0.2s instant stock deduction on scan</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Visual preview of stock balance before committing</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Quick SKU chip presets for high-volume items</li>
+						</ul>
+					</div>
+					<div class="lp-zigzag-visual">
+						<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:0.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">
+							<span>Barcode Scanner Terminal</span>
+							<span style="color:#10b981;">Ready</span>
+						</div>
+						<div style="background:rgba(3,7,18,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px;">
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+								<span style="font-size:0.85rem; font-weight:700; color:#fff;">SKU 401 &middot; Wireless Mouse</span>
+								<span style="font-size:0.72rem; padding:2px 8px; border-radius:6px; background:#10b981; color:#064e3b; font-weight:700;">Stock 62</span>
+							</div>
+							<div style="display:flex; gap:6px; margin-bottom:12px;">
+								<span style="padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06); font-size:0.75rem; color:#94a3b8;">401</span>
+								<span style="padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06); font-size:0.75rem; color:#94a3b8;">402</span>
+								<span style="padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06); font-size:0.75rem; color:#94a3b8;">505</span>
+								<span style="padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06); font-size:0.75rem; color:#94a3b8;">601</span>
+							</div>
+							<div style="height:6px; background:rgba(255,255,255,0.1); border-radius:999px; overflow:hidden;">
+								<div style="width:75%; height:100%; background:linear-gradient(90deg, #10b981, #3b82f6);"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Row 2 (Reverse): Automated Email Purchase Orders -->
+				<div class="lp-zigzag-row reverse">
+					<div class="lp-zigzag-copy">
+						<span class="lp-zigzag-badge">Catalyst Mail</span>
+						<h3 class="lp-zigzag-title">Automated supplier purchase order dispatch</h3>
+						<p class="lp-zigzag-desc">Suppliers receive itemized replenishment requests when stock drops to the reorder point. Send directly through Catalyst Mail or copy into your email client.</p>
+						<ul class="lp-zigzag-bullets">
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Automated order quantity calculation based on par level</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Pre-filled supplier email addresses &amp; dock instructions</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Permanent audit record in Catalyst Data Store</li>
+						</ul>
+					</div>
+					<div class="lp-zigzag-visual">
+						<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:0.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">
+							<span>Purchase Order Email Sheet</span>
+							<span style="color:#60a5fa;">Auto-Generated</span>
+						</div>
+						<div style="background:rgba(3,7,18,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; font-family:var(--mono); font-size:0.78rem; color:#cbd5e1; line-height:1.5;">
+							<div><span style="color:#64748b;">To:</span> orders@peripheralsupply.example.com</div>
+							<div><span style="color:#64748b;">Subject:</span> [PO-2026] SKU 401 Replenishment Order</div>
+							<div style="margin-top:8px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.1); color:#94a3b8;">
+								Please dispatch 40 units of Wireless Mouse (SKU 401). Current stock has reached safety buffer (10 units). Deliver to Bay 2.
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Row 3: Dead-Stock Analytics -->
+				<div class="lp-zigzag-row">
+					<div class="lp-zigzag-copy">
+						<span class="lp-zigzag-badge">Stock Analytics</span>
+						<h3 class="lp-zigzag-title">Dead-stock and coverage-days analytics</h3>
+						<p class="lp-zigzag-desc">Identify stagnant inventory sitting on shelves before holding costs accumulate. Filter catalog items by velocity, coverage days, and total tied-up working capital.</p>
+						<ul class="lp-zigzag-bullets">
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Visual coverage days meter for every catalog SKU</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Flag stagnant items with zero movements in 30 days</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> One-click restock dialog when supplier shipments arrive</li>
+						</ul>
+					</div>
+					<div class="lp-zigzag-visual">
+						<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:0.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">
+							<span>Stock Health &amp; Par Ratios</span>
+							<span style="color:#f59e0b;">Diagnostics</span>
+						</div>
+						<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+							<div style="background:rgba(3,7,18,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px;">
+								<div style="font-size:0.72rem; color:#94a3b8;">FAST MOVING</div>
+								<div style="font-size:1.1rem; font-weight:700; color:#34d399; margin:3px 0;">SKU 401</div>
+								<div style="font-size:0.75rem; color:#cbd5e1;">12.4 coverage days</div>
+							</div>
+							<div style="background:rgba(3,7,18,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px;">
+								<div style="font-size:0.72rem; color:#94a3b8;">STAGNANT</div>
+								<div style="font-size:1.1rem; font-weight:700; color:#f87171; margin:3px 0;">SKU 601</div>
+								<div style="font-size:0.75rem; color:#cbd5e1;">0 sales this period</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- 6. Social Proof & Testimonials -->
+		<section class="lp-section" id="lp-testimonials">
+			<div class="lp-section-head">
+				<div class="lp-eyebrow" style="margin-bottom:12px;">Verified Results</div>
+				<h2 class="lp-section-title">What warehouse operators report</h2>
+				<p class="lp-section-desc">Warehouse leads share how they cut stockouts and eliminate manual reorder spreadsheets.</p>
+			</div>
+			<div class="lp-testimonials-grid">
+				<div class="lp-testimonial-card">
+					<div>
+						<span class="lp-quote-badge">82% Stockout Reduction</span>
+						<p class="lp-quote-body">"Before SmartStock, we discovered stockouts when a customer was already standing at the counter. Now our floor cashiers scan 3-digit codes in seconds, and our suppliers receive replenishment orders before lunch."</p>
+					</div>
+					<div class="lp-author-row">
+						<div class="lp-author-avatar">MV</div>
+						<div class="lp-author-info">
+							<h4>Marcus Vance</h4>
+							<p>Head of Supply Chain &middot; Apex Freight Global</p>
+						</div>
+					</div>
+				</div>
+				<div class="lp-testimonial-card">
+					<div>
+						<span class="lp-quote-badge">4.5 Hours Saved Weekly</span>
+						<p class="lp-quote-body">"Our purchasing team spent every Friday morning compiling inventory spreadsheets and emailing vendors one by one. SmartStock drafts the orders the second stock hits the reorder point."</p>
+					</div>
+					<div class="lp-author-row">
+						<div class="lp-author-avatar">ER</div>
+						<div class="lp-author-info">
+							<h4>Elena Rostova</h4>
+							<p>Operations Director &middot; MetroSupply Co.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="lp-roi-strip">
+				<div>
+					<div class="lp-roi-val">82%</div>
+					<div class="lp-roi-lbl">Fewer Stockouts</div>
+				</div>
+				<div>
+					<div class="lp-roi-val">4.5 hrs</div>
+					<div class="lp-roi-lbl">Saved Weekly</div>
+				</div>
+				<div>
+					<div class="lp-roi-val">0.2s</div>
+					<div class="lp-roi-lbl">Scan Response</div>
+				</div>
+				<div>
+					<div class="lp-roi-val">99.98%</div>
+					<div class="lp-roi-lbl">Audit Accuracy</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- 7. Pricing Section -->
+		<section class="lp-section" id="lp-pricing">
+			<div class="lp-section-head">
+				<div class="lp-eyebrow" style="margin-bottom:12px;">Transparent Pricing</div>
+				<h2 class="lp-section-title">Simple plans with zero hidden fees</h2>
+				<p class="lp-section-desc">Start free on the development environment, then scale across multiple warehouse locations.</p>
+			</div>
+			<div class="lp-pricing-grid">
+				<!-- Tier 1: Starter -->
+				<div class="lp-pricing-card">
+					<div>
+						<h3 class="lp-pricing-tier">Starter</h3>
+						<p class="lp-pricing-sub">For small retail counters and single-site stockrooms.</p>
+						<div class="lp-pricing-price">
+							<span class="lp-pricing-num">$0</span>
+							<span class="lp-pricing-per">/ free forever</span>
+						</div>
+						<ul class="lp-pricing-features">
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 Warehouse location</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 100 catalog SKUs</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> High-speed barcode terminal</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Local PBKDF2 authentication</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Basic low-stock email drafts</li>
+						</ul>
+					</div>
+					<button type="button" class="btn btn-outline lp-signup-trigger" style="width:100%; justify-content:center;">Get Started Free</button>
+				</div>
+
+				<!-- Tier 2: Pro (Popular) -->
+				<div class="lp-pricing-card popular">
+					<span class="lp-pricing-badge">Most Popular</span>
+					<div>
+						<h3 class="lp-pricing-tier">Pro Operations</h3>
+						<p class="lp-pricing-sub">For active distribution warehouses and fast-moving retail hubs.</p>
+						<div class="lp-pricing-price">
+							<span class="lp-pricing-num">$49</span>
+							<span class="lp-pricing-per">/ month</span>
+						</div>
+						<ul class="lp-pricing-features">
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 5 warehouse locations</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited catalog SKUs</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Automated Catalyst Mail PO dispatch</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Multi-tier roles (Admin, Mgr, Op)</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dead-stock &amp; coverage analytics</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Audit log history &amp; CSV export</li>
+						</ul>
+					</div>
+					<button type="button" class="btn btn-primary lp-signup-trigger" style="width:100%; justify-content:center;">Start Free Pro Trial</button>
+				</div>
+
+				<!-- Tier 3: Enterprise -->
+				<div class="lp-pricing-card">
+					<div>
+						<h3 class="lp-pricing-tier">Enterprise</h3>
+						<p class="lp-pricing-sub">For multi-site logistics networks requiring custom ERP webhooks.</p>
+						<div class="lp-pricing-price">
+							<span class="lp-pricing-num">Custom</span>
+							<span class="lp-pricing-per">/ quote</span>
+						</div>
+						<ul class="lp-pricing-features">
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited warehouse sites</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated Catalyst data store</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Custom ERP &amp; webhook integrations</li>
+							<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 99.99% uptime SLA with support</li>
+						</ul>
+					</div>
+					<button type="button" class="btn btn-outline lp-signin-trigger" style="width:100%; justify-content:center;">Contact Operations Team</button>
+				</div>
+			</div>
+		</section>
+
+		<!-- 8. Frequently Asked Questions (FAQ) -->
+		<section class="lp-section" id="lp-faq">
+			<div class="lp-section-head">
+				<div class="lp-eyebrow" style="margin-bottom:12px;">FAQ</div>
+				<h2 class="lp-section-title">Frequently Asked Questions</h2>
+				<p class="lp-section-desc">Everything you need to know about setup, hardware compatibility, and data security.</p>
+			</div>
+			<div class="lp-faq-wrap">
+				<div class="faq-item">
+					<button type="button" class="faq-question" aria-expanded="false">
+						<span>Do I need specialized barcode scanner hardware?</span>
+						<svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+					</button>
+					<div class="faq-answer">
+						No. SmartStock works with any standard USB or Bluetooth laser scanner gun that emulates a keyboard (HID mode), as well as manual numeric keyboard entry on laptops, desktops, and mobile tablets.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button type="button" class="faq-question" aria-expanded="false">
+						<span>How does the automated supplier purchase order email work?</span>
+						<svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+					</button>
+					<div class="faq-answer">
+						When an item's remaining inventory reaches or drops below its defined par reorder level, SmartStock automatically drafts an itemized purchase order email with the supplier's contact address, suggested reorder quantity, and delivery instructions. You can review the draft or have it delivered automatically via Zoho Catalyst Mail.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button type="button" class="faq-question" aria-expanded="false">
+						<span>How are user passwords and credentials secured?</span>
+						<svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+					</button>
+					<div class="faq-answer">
+						All user credentials use salted PBKDF2 SHA-256 cryptographic hashing stored directly in the Zoho Catalyst Data Store Users table. Passwords are never stored or transmitted in plaintext.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button type="button" class="faq-question" aria-expanded="false">
+						<span>Can I assign different permissions for cashiers versus managers?</span>
+						<svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+					</button>
+					<div class="faq-answer">
+						Yes. SmartStock includes built-in Role-Based Access Control (RBAC). Operators can scan barcodes and record sales; Managers can approve purchase orders and restock items; Administrators have full control over catalog SKUs, user accounts, and system configuration.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button type="button" class="faq-question" aria-expanded="false">
+						<span>How is SmartStock hosted on Zoho Catalyst?</span>
+						<svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+					</button>
+					<div class="faq-answer">
+						SmartStock is 100% serverless. The frontend is hosted on Catalyst Slate edge CDN with zero build overhead, while the API runs on Node.js Advanced I/O functions backed by ACID-compliant Catalyst Data Store relational tables.
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- 9. Bottom Banner CTA & Footer -->
+		<div class="lp-cta-banner" id="lp-bottom-cta">
+			<h2 style="font-size:2.2rem; font-weight:800; color:#ffffff; margin-bottom:12px;">Ready to stop warehouse stockouts?</h2>
+			<p style="font-size:1rem; color:#94a3b8; max-width:600px; margin:0 auto 28px; line-height:1.6;">
+				Create an account in 30 seconds or test the console right now with our 1-click admin demo.
+			</p>
+			<div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
+				<button type="button" class="lp-btn-primary lp-signup-trigger">Get Started Free &rarr;</button>
+				<button type="button" class="lp-btn-outline lp-signin-trigger">Sign In to Console</button>
+			</div>
+		</div>
+
+		<!-- Clean Multi-Column Footer -->
+		<footer class="landing-footer">
+			<div class="lp-footer-grid">
+				<div>
+					<div style="font-size:1.1rem; font-weight:800; color:#ffffff; margin-bottom:8px;">SmartStock</div>
+					<p style="font-size:0.84rem; color:#94a3b8; line-height:1.6; max-width:280px; margin:0 0 16px;">
+						Real-time barcode inventory terminal and automated supplier purchase order replenishment on Zoho Catalyst.
+					</p>
+					<span style="font-size:0.75rem; color:#34d399; display:inline-flex; align-items:center; gap:6px;">
+						<span style="width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+						<span>Zoho Catalyst Cloud Ops Live</span>
+					</span>
+				</div>
+				<div class="lp-footer-col">
+					<h4>Modules</h4>
+					<a href="#scanner">Barcode Terminal</a>
+					<a href="#dashboard">Stock Analysis</a>
+					<a href="#products">Product Catalog</a>
+					<a href="#alerts">Low-Stock Queue</a>
+					<a href="#users">Team Directory</a>
+				</div>
+				<div class="lp-footer-col">
+					<h4>Platform</h4>
+					<a href="#lp-solutions">Advanced I/O</a>
+					<a href="#lp-solutions">Relational Data Store</a>
+					<a href="#lp-solutions">Catalyst Slate CDN</a>
+					<a href="#lp-features">Catalyst Mail SDK</a>
+				</div>
+				<div class="lp-footer-col">
+					<h4>Resources</h4>
+					<a href="#lp-solutions">Solutions</a>
+					<a href="#lp-pricing">Pricing Tiers</a>
+					<a href="#lp-faq">FAQ</a>
+					<a href="#top">Back to Top &uarr;</a>
+				</div>
+			</div>
+			<div class="lp-footer-bottom">
+				<div>SmartStock Inventory Operations &middot; Development Environment &middot; 2026</div>
+				<div>Org ID: 60095756559 &middot; Project ID: 99326000000013051</div>
+			</div>
+		</footer>
+	</div>
+
+	<!-- ============================================================
+	     2. INTEGRATED AUTH MODAL (SIGN IN & SIGN UP TABS)
+	     ============================================================ -->
+	<div id="authModal" class="auth-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+		<div class="auth-modal-dialog">
+			<button type="button" id="authModalCloseBtn" class="auth-modal-close" aria-label="Close authentication dialog">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+			</button>
+
+			<div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+				<div style="width:26px; height:26px; border-radius:7px; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff;">
+					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+				</div>
+				<span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--primary);">User Authentication</span>
+			</div>
+			<h3 id="authModalTitle" style="font-size:1.35rem; font-weight:800; color:var(--ink); margin:0 0 4px;">SmartStock Console</h3>
+			<p style="font-size:0.82rem; color:var(--muted); margin:0;">Enter credentials or create an account to enter the warehouse console.</p>
+
+			<!-- Tabs Switcher -->
+			<div class="auth-modal-tabs" role="tablist">
+				<button type="button" id="authTabSignIn" class="auth-tab-btn active" role="tab" aria-selected="true">Sign In</button>
+				<button type="button" id="authTabSignUp" class="auth-tab-btn" role="tab" aria-selected="false">Create Account</button>
+			</div>
+
+			<div id="authModalBanner" class="auth-modal-banner"></div>
+			<div id="authLoadingState" class="auth-loading-box" hidden>
+				<div class="auth-spinner" aria-hidden="true"></div>
+				<span>Validating session with Catalyst Data Store...</span>
+			</div>
+
+			<!-- TAB 1: SIGN IN FORM -->
+			<form id="customLoginForm" style="display:flex; flex-direction:column; gap:13px;">
+				<div>
+					<div class="field-label">
+						<label for="loginUsername">Username or Email</label>
+						<span class="field-hint">e.g. admin or operator</span>
+					</div>
+					<input id="loginUsername" class="input-control" type="text" autocomplete="username" placeholder="admin" required autofocus />
+				</div>
+				<div>
+					<div class="field-label">
+						<label for="loginPassword">Password</label>
+						<span class="field-hint">Secure password</span>
+					</div>
+					<input id="loginPassword" class="input-control" type="password" autocomplete="current-password" placeholder="admin123" required />
+				</div>
+
+				<div style="background:var(--surface-subtle); border:1px solid var(--border); border-radius:10px; padding:10px 12px;">
+					<div style="font-size:0.75rem; font-weight:700; color:var(--ink-2); margin-bottom:6px; display:flex; justify-content:space-between;">
+						<span>Quick Demo Presets:</span>
+						<span style="font-size:0.7rem; color:var(--muted);">1-Click fill</span>
+					</div>
+					<div style="display:flex; gap:6px; flex-wrap:wrap;">
+						<button type="button" class="btn btn-sm login-preset" data-user="admin" data-pass="admin123" style="font-size:0.75rem; padding:4px 8px;">
+							admin
+						</button>
+						<button type="button" class="btn btn-sm login-preset" data-user="sarah_ops" data-pass="manager123" style="font-size:0.75rem; padding:4px 8px;">
+							sarah (Manager)
+						</button>
+						<button type="button" class="btn btn-sm login-preset" data-user="operator" data-pass="operator123" style="font-size:0.75rem; padding:4px 8px;">
+							operator
+						</button>
+					</div>
+				</div>
+
+				<button type="submit" id="loginSubmitBtn" class="lp-btn-primary" style="width:100%; justify-content:center; margin-top:4px;">
+					Sign In to Console
+				</button>
+			</form>
+
+			<!-- TAB 2: SIGN UP FORM -->
+			<form id="customSignUpForm" style="display:none; flex-direction:column; gap:13px;">
+				<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+					<div>
+						<div class="field-label">
+							<label for="signupFullName">Full Name</label>
+						</div>
+						<input id="signupFullName" class="input-control" type="text" placeholder="Alex Rivera" required />
+					</div>
+					<div>
+						<div class="field-label">
+							<label for="signupUsername">Username</label>
+						</div>
+						<input id="signupUsername" class="input-control" type="text" placeholder="alex_ops" required />
+					</div>
+				</div>
+				<div>
+					<div class="field-label">
+						<label for="signupEmail">Email Address</label>
+					</div>
+					<input id="signupEmail" class="input-control" type="email" placeholder="alex@smartstock.local" required />
+				</div>
+				<div>
+					<div class="field-label">
+						<label for="signupRole">System Role</label>
+					</div>
+					<select id="signupRole" class="input-control" style="background:var(--input-bg); color:var(--ink);">
+						<option value="Operator">Warehouse Operator (Standard)</option>
+						<option value="Manager">Inventory Manager (Approvals)</option>
+						<option value="Admin">System Administrator (Full Access)</option>
+					</select>
+				</div>
+				<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+					<div>
+						<div class="field-label">
+							<label for="signupPassword">Password</label>
+						</div>
+						<input id="signupPassword" class="input-control" type="password" placeholder="Min. 4 chars" required />
+					</div>
+					<div>
+						<div class="field-label">
+							<label for="signupConfirmPassword">Confirm</label>
+						</div>
+						<input id="signupConfirmPassword" class="input-control" type="password" placeholder="Repeat pass" required />
+					</div>
+				</div>
+
+				<button type="submit" id="signupSubmitBtn" class="lp-btn-primary" style="width:100%; justify-content:center; margin-top:4px;">
+					Create Account &amp; Enter Console
+				</button>
+			</form>
+		</div>
+	</div>
 
 	<div id="sidebarBackdrop" class="sidebar-backdrop" hidden></div>
 
@@ -2237,6 +4208,19 @@
 				<span class="sidebar-link-label">Products</span>
 				<span id="sidebarSkuBadge" class="sidebar-count" hidden>0</span>
 			</button>
+			<button type="button" class="sidebar-link" data-nav="users" data-view="users" title="User Management & Table">
+				<span class="sidebar-link-icon" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+				</span>
+				<span class="sidebar-link-label">Users</span>
+				<span id="sidebarUserCount" class="sidebar-count" hidden>0</span>
+			</button>
+			<button type="button" class="sidebar-link" data-nav="expenses" data-view="expenses" title="Zoho Expense Ledger & Analytics">
+				<span class="sidebar-link-icon" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+				</span>
+				<span class="sidebar-link-label">Expenses</span>
+			</button>
 
 			<hr class="sidebar-divider" />
 			<div class="sidebar-section-label">Operations</div>
@@ -2259,6 +4243,15 @@
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
 				</span>
 				<span class="sidebar-link-label">Sync Live Data</span>
+			</button>
+
+			<hr class="sidebar-divider" />
+			<div class="sidebar-section-label">Portal</div>
+			<button type="button" class="sidebar-link" id="sidebarLandingBtn" title="View Public Landing Page">
+				<span class="sidebar-link-icon" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+				</span>
+				<span class="sidebar-link-label">Landing Page</span>
 			</button>
 		</nav>
 
@@ -2308,12 +4301,32 @@
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
 						<span>Add SKU</span>
 					</button>
+					<button type="button" id="tabUsers" class="module-tab" data-view="users">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+						<span>Users</span>
+					</button>
+					<button type="button" id="tabExpenses" class="module-tab" data-view="expenses">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+						<span>Expenses</span>
+					</button>
 				</nav>
 				<div class="status-bar">
 					<span id="connBadge" class="status-pill">Connecting</span>
 					<span id="aiBadge" class="status-pill">Draft Engine</span>
 					<span id="mailBadge" class="status-pill">Catalyst Mail</span>
 				</div>
+				<button type="button" id="soundToggleBtn" class="sound-toggle-btn" title="Toggle Scanner Audio Beeps (Key: M)" aria-label="Toggle Scanner Audio">
+					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+						<path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+					</svg>
+					<span id="soundToggleText">Audio</span>
+				</button>
+				<button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Light / Dark Theme (Key: T)" aria-label="Toggle Theme">
+					<svg id="themeIconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+					<svg id="themeIconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+					<span id="themeToggleText">Theme</span>
+				</button>
 				<button type="button" id="topbarAlertBtn" class="topbar-alert-btn" aria-label="View low-stock alerts" title="View low-stock alerts">
 					<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
 					<span id="topbarAlertCount" class="topbar-alert-count" hidden>0</span>
@@ -2398,6 +4411,19 @@
 
 						<button id="submitBtn" type="submit" class="btn btn-primary">Log Sale &amp; Run Stock Check</button>
 						<div id="formBanner" class="banner" role="status"></div>
+
+						<!-- EGM Phase 2: Warehouse Keyboard Shortcut Helper Strip -->
+						<div class="shortcut-bar" aria-label="Keyboard Shortcuts">
+							<span class="shortcut-bar-title">Shortcuts:</span>
+							<span class="shortcut-pill"><span class="shortcut-key">↵ Enter</span> Log Sale</span>
+							<span class="shortcut-pill"><span class="shortcut-key">Esc</span> Clear</span>
+							<span class="shortcut-pill"><span class="shortcut-key">+</span> <span class="shortcut-key">-</span> Qty</span>
+							<span class="shortcut-pill"><span class="shortcut-key">1..5</span> Presets</span>
+							<span class="shortcut-pill"><span class="shortcut-key">Alt+1..5</span> Views</span>
+							<span class="shortcut-pill"><span class="shortcut-key">/</span> Focus Scan</span>
+							<span class="shortcut-pill"><span class="shortcut-key">M</span> Audio</span>
+							<span class="shortcut-pill"><span class="shortcut-key">T</span> Theme</span>
+						</div>
 					</form>
 				</div>
 			</section>
@@ -2421,11 +4447,74 @@
 				</div>
 			</section>
 		</div>
+
+		<!-- EGM Phase 3: Shift Audit Ledger & Live Transaction Trail -->
+		<section class="audit-panel" id="shiftAuditSection">
+			<div class="audit-head">
+				<div class="audit-title-wrap">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+					<h3 class="audit-title">Live Shift Audit Trail</h3>
+					<span id="shiftAuditCountBadge" class="audit-badge">0 Events</span>
+				</div>
+				<div class="audit-actions">
+					<button type="button" id="exportAuditCsvBtn" class="audit-btn" title="Export shift transactions as CSV">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+						<span>Export CSV</span>
+					</button>
+					<button type="button" id="clearAuditBtn" class="audit-btn" title="Clear current shift ledger">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+						<span>Clear Log</span>
+					</button>
+				</div>
+			</div>
+			<div class="audit-stats-grid">
+				<div class="audit-stat-card">
+					<div id="statAuditTotalUnits" class="audit-stat-val">0</div>
+					<div class="audit-stat-lbl">Units Sold This Shift</div>
+				</div>
+				<div class="audit-stat-card">
+					<div id="statAuditTotalRestock" class="audit-stat-val">0</div>
+					<div class="audit-stat-lbl">Units Restocked</div>
+				</div>
+				<div class="audit-stat-card">
+					<div id="statAuditAlertsFired" class="audit-stat-val">0</div>
+					<div class="audit-stat-lbl">Threshold Alerts</div>
+				</div>
+				<div class="audit-stat-card">
+					<div id="statAuditTxCount" class="audit-stat-val">0</div>
+					<div class="audit-stat-lbl">Total Shift Scans</div>
+				</div>
+			</div>
+			<div class="audit-table-wrap">
+				<table class="audit-table">
+					<thead>
+						<tr>
+							<th style="width:105px;">Time</th>
+							<th style="width:95px;">Action</th>
+							<th style="width:75px;">SKU</th>
+							<th>Item Description</th>
+							<th style="width:100px;text-align:right;">Delta</th>
+							<th style="width:115px;text-align:right;">Closing Stock</th>
+							<th style="width:115px;">Operator</th>
+						</tr>
+					</thead>
+					<tbody id="shiftAuditBody">
+						<tr>
+							<td colspan="7" style="padding:24px;text-align:center;color:var(--muted);">
+								No transactions logged in this shift yet. Scan a SKU above to begin recording audit events.
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
 		</section>
 		<section id="dashboardView" hidden></section>
 		<section id="productsView" hidden></section>
 		<section id="alertsView" hidden></section>
 		<section id="addSkuView" hidden></section>
+		<section id="usersView" hidden></section>
+		<section id="expensesView" hidden></section>
 	</main>
 
 	<nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Mobile navigation" hidden>
@@ -2441,6 +4530,10 @@
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
 			<span>Products</span>
 		</button>
+		<button type="button" class="mobile-nav-btn" data-nav="users" data-view="users">
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+			<span>Users</span>
+		</button>
 		<button type="button" class="mobile-nav-btn" data-nav="alerts" data-view="alerts">
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
 			<span id="mobileAlertBadge" class="mobile-nav-badge" hidden>0</span>
@@ -2454,17 +4547,310 @@
 
 	<script src="https://static.zohocdn.com/catalyst/sdk/js/4.6.1/catalystWebSDK.js"></script>
 	<script src="/__catalyst/sdk/init.js"></script>
-	<script src="./auth-guard.js?v=20261112-5"></script>
-	<script src="./dashboard-analytics.js?v=20261112-4"></script>
-	<script src="./product-manager.js?v=20261112-5"></script>
+	<script src="./auth-guard.js?v=20261113-6"></script>
+	<script src="./dashboard-analytics.js?v=20261113-6"></script>
+	<script src="./product-manager.js?v=20261113-6"></script>
+	<script src="./user-manager.js?v=20261113-6"></script>
+	<script src="./expense-manager.js?v=20261113-6"></script>
 	<script>
 		const PROD_API_BASE = 'https://smartinventorysystem-60095756559.development.catalystserverless.in/server/smart_inventory/execute';
 		const LOCAL_API_BASE = 'http://localhost:3000/server/smart_inventory/execute';
-		const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+		const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
 		const API_BASE = isLocalhost ? LOCAL_API_BASE : PROD_API_BASE;
 		const apiFetch = window.SmartAuth.authFetch;
 
 		const state = { products: [], capabilities: {}, currentUser: null };
+
+		// ============================================================
+		// EGM Phase 4: Unified Reactive State Bus
+		// Cross-module pub/sub event bus
+		// ============================================================
+		window.InventoryBus = (() => {
+			const listeners = {};
+			return {
+				on(event, fn) {
+					if (!listeners[event]) listeners[event] = [];
+					listeners[event].push(fn);
+				},
+				emit(event, data) {
+					if (listeners[event]) {
+						listeners[event].forEach((fn) => {
+							try { fn(data); } catch (err) { console.error('Bus error:', err); }
+						});
+					}
+				}
+			};
+		})();
+
+		// ============================================================
+		// Modern Light & Dark Theme Manager
+		// Soft off-white #F8FAFC vs Deep charcoal #0F172A
+		// ============================================================
+		const ThemeManager = (() => {
+			const STORAGE_KEY = 'smartstock_theme_v2';
+			let currentTheme = 'dark'; // default to deep dark charcoal
+
+			try {
+				const saved = localStorage.getItem(STORAGE_KEY);
+				if (saved === 'light' || saved === 'dark') {
+					currentTheme = saved;
+				} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+					currentTheme = 'light';
+				}
+			} catch {
+				currentTheme = 'dark';
+			}
+
+			function applyTheme(theme) {
+				currentTheme = theme === 'light' ? 'light' : 'dark';
+				document.documentElement.setAttribute('data-theme', currentTheme);
+				document.body.setAttribute('data-theme', currentTheme);
+				try { localStorage.setItem(STORAGE_KEY, currentTheme); } catch {}
+
+				const sunIcon = document.getElementById('themeIconSun');
+				const moonIcon = document.getElementById('themeIconMoon');
+				const label = document.getElementById('themeToggleText');
+				const btn = document.getElementById('themeToggleBtn');
+
+				if (currentTheme === 'dark') {
+					if (sunIcon) sunIcon.style.display = 'inline-block';
+					if (moonIcon) moonIcon.style.display = 'none';
+					if (label) label.textContent = 'Dark';
+					if (btn) btn.title = 'Switch to Light Theme (Key: T)';
+				} else {
+					if (sunIcon) sunIcon.style.display = 'none';
+					if (moonIcon) moonIcon.style.display = 'inline-block';
+					if (label) label.textContent = 'Light';
+					if (btn) btn.title = 'Switch to Dark Theme (Key: T)';
+				}
+			}
+
+			function toggleTheme() {
+				const next = currentTheme === 'dark' ? 'light' : 'dark';
+				applyTheme(next);
+				if (window.SoundFx) window.SoundFx.playClick();
+				return next;
+			}
+
+			return {
+				init() { applyTheme(currentTheme); },
+				getTheme() { return currentTheme; },
+				toggleTheme,
+				applyTheme
+			};
+		})();
+
+		// ============================================================
+		// EGM Phase 1: Web Audio Synthesizer (Audio-Haptic Feedback)
+		// Zero external sound files, pure browser AudioContext synthesis
+		// ============================================================
+		const SoundFx = (() => {
+			let audioCtx = null;
+			let isMuted = false;
+			try {
+				isMuted = localStorage.getItem('smart_audio_muted') === 'true';
+			} catch {}
+
+			function getContext() {
+				if (!audioCtx) {
+					const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+					if (AudioContextClass) audioCtx = new AudioContextClass();
+				}
+				if (audioCtx && audioCtx.state === 'suspended') {
+					audioCtx.resume();
+				}
+				return audioCtx;
+			}
+
+			function playTone(freq, type, durationMs, gainLevel = 0.12) {
+				if (isMuted) return;
+				try {
+					const ctx = getContext();
+					if (!ctx) return;
+					const osc = ctx.createOscillator();
+					const gain = ctx.createGain();
+					osc.type = type;
+					osc.frequency.setValueAtTime(freq, ctx.currentTime);
+					gain.gain.setValueAtTime(gainLevel, ctx.currentTime);
+					gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (durationMs / 1000));
+					osc.connect(gain);
+					gain.connect(ctx.destination);
+					osc.start();
+					osc.stop(ctx.currentTime + (durationMs / 1000));
+				} catch {}
+			}
+
+			return {
+				isMuted() { return isMuted; },
+				toggleMute() {
+					isMuted = !isMuted;
+					try { localStorage.setItem('smart_audio_muted', String(isMuted)); } catch {}
+					return isMuted;
+				},
+				playSuccess() {
+					playTone(880, 'sine', 75, 0.14);
+					if (navigator.vibrate) try { navigator.vibrate([35]); } catch {}
+				},
+				playWarning() {
+					if (isMuted) return;
+					try {
+						const ctx = getContext();
+						if (!ctx) return;
+						const osc = ctx.createOscillator();
+						const gain = ctx.createGain();
+						osc.type = 'sine';
+						osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+						osc.frequency.setValueAtTime(880, ctx.currentTime + 0.06);
+						gain.gain.setValueAtTime(0.12, ctx.currentTime);
+						gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+						osc.connect(gain);
+						gain.connect(ctx.destination);
+						osc.start();
+						osc.stop(ctx.currentTime + 0.14);
+					} catch {}
+					if (navigator.vibrate) try { navigator.vibrate([60]); } catch {}
+				},
+				playError() {
+					playTone(220, 'sawtooth', 180, 0.18);
+					if (navigator.vibrate) try { navigator.vibrate([80, 50, 80]); } catch {}
+				},
+				playClick() {
+					playTone(1200, 'triangle', 25, 0.05);
+				}
+			};
+		})();
+
+		// ============================================================
+		// EGM Phase 3: Shift Audit Ledger Module
+		// Persistent, timestamped warehouse floor transaction record
+		// ============================================================
+		const ShiftAuditLedger = (() => {
+			const STORAGE_KEY = 'smart_shift_audit_ledger_v1';
+			let entries = [];
+
+			try {
+				const raw = localStorage.getItem(STORAGE_KEY);
+				entries = raw ? JSON.parse(raw) : [];
+			} catch {
+				entries = [];
+			}
+
+			function save() {
+				try {
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, 200)));
+				} catch {}
+			}
+
+			function record({ action, sku, itemName, delta, closingStock, operator, details }) {
+				const entry = {
+					id: 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+					timestamp: new Date().toISOString(),
+					timeStr: new Date().toLocaleTimeString(),
+					action: action || 'SALE',
+					sku: String(sku || ''),
+					itemName: String(itemName || 'Unknown Item'),
+					delta: Number(delta || 0),
+					closingStock: Number(closingStock ?? 0),
+					operator: String(operator || (state.currentUser ? (state.currentUser.fullName || state.currentUser.username) : 'Operator')),
+					details: details || ''
+				};
+				entries.unshift(entry);
+				if (entries.length > 200) entries = entries.slice(0, 200);
+				save();
+				render();
+				return entry;
+			}
+
+			function clear() {
+				entries = [];
+				save();
+				render();
+			}
+
+			function exportCsv() {
+				if (entries.length === 0) {
+					alert('No transactions in current shift to export.');
+					return;
+				}
+				const headers = ['Timestamp', 'Time', 'Action', 'SKU', 'Item Name', 'Quantity Delta', 'Closing Stock', 'Operator', 'Details'];
+				const csvRows = entries.map((e) => [
+					`"${e.timestamp}"`,
+					`"${e.timeStr}"`,
+					`"${e.action}"`,
+					`"${e.sku}"`,
+					`"${e.itemName.replace(/"/g, '""')}"`,
+					e.delta,
+					e.closingStock,
+					`"${e.operator.replace(/"/g, '""')}"`,
+					`"${(e.details || '').replace(/"/g, '""')}"`
+				].join(','));
+				const csvContent = [headers.join(','), ...csvRows].join('\r\n');
+				const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = `shift-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			}
+
+			function render() {
+				const body = document.getElementById('shiftAuditBody');
+				const countBadge = document.getElementById('shiftAuditCountBadge');
+				const statSold = document.getElementById('statAuditTotalUnits');
+				const statRestock = document.getElementById('statAuditTotalRestock');
+				const statAlerts = document.getElementById('statAuditAlertsFired');
+				const statTx = document.getElementById('statAuditTxCount');
+
+				let totalSold = 0;
+				let totalRestocked = 0;
+				let alertsFired = 0;
+
+				entries.forEach((e) => {
+					if (e.action === 'SALE') totalSold += Math.abs(e.delta);
+					else if (e.action === 'RESTOCK') totalRestocked += e.delta;
+					else if (e.action === 'PAR_ALERT') alertsFired++;
+				});
+
+				if (statSold) statSold.textContent = totalSold;
+				if (statRestock) statRestock.textContent = totalRestocked;
+				if (statAlerts) statAlerts.textContent = alertsFired;
+				if (statTx) statTx.textContent = entries.length;
+				if (countBadge) countBadge.textContent = `${entries.length} Events`;
+
+				if (!body) return;
+				if (entries.length === 0) {
+					body.innerHTML = `<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted);">No transactions logged in this shift yet. Scan a SKU above to begin recording audit events.</td></tr>`;
+					return;
+				}
+
+				body.innerHTML = entries.slice(0, 50).map((e) => {
+					const badgeClass = e.action === 'SALE' ? 'sale' : e.action === 'RESTOCK' ? 'restock' : e.action === 'PAR_ALERT' ? 'alert' : 'po';
+					const deltaDisplay = e.delta < 0 ? `<span style="color:#ef4444;font-weight:700;">${e.delta}</span>` : e.delta > 0 ? `<span style="color:#10b981;font-weight:700;">+${e.delta}</span>` : '0';
+					return `
+						<tr>
+							<td style="font-family:var(--mono);color:var(--muted);font-size:0.75rem;">${escapeHtml(e.timeStr)}</td>
+							<td><span class="audit-act-badge ${badgeClass}">${escapeHtml(e.action)}</span></td>
+							<td style="font-family:var(--mono);font-weight:700;color:var(--primary);">${escapeHtml(e.sku)}</td>
+							<td style="font-weight:600;color:var(--ink);">${escapeHtml(e.itemName)}</td>
+							<td style="text-align:right;">${deltaDisplay}</td>
+							<td style="text-align:right;font-family:var(--mono);font-weight:700;">${e.closingStock}</td>
+							<td style="font-size:0.78rem;color:var(--muted);">${escapeHtml(e.operator)}</td>
+						</tr>
+					`;
+				}).join('');
+			}
+
+			return {
+				record,
+				clear,
+				exportCsv,
+				render,
+				getEntries() { return entries; }
+			};
+		})();
 
 		const skuInput = document.getElementById('skuInput');
 		const qtyInput = document.getElementById('qtyInput');
@@ -2678,6 +5064,14 @@
 		async function fetchProducts() {
 			try {
 				const res = await apiFetch(`${API_BASE}/products`);
+				if (res.status === 401) {
+					connBadge.textContent = 'Auth Required';
+					connBadge.className = 'status-pill warn';
+					if (productsBody) {
+						productsBody.innerHTML = `<tr><td colspan="7" style="color:var(--warn-ink);font-weight:600;padding:24px;text-align:center;">Session expired or login required. Please sign in to view catalog inventory.</td></tr>`;
+					}
+					return;
+				}
 				const data = await res.json();
 				if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to load products');
 				state.products = data.products || [];
@@ -2685,12 +5079,14 @@
 				if (data.user) {
 					updateUserChip(data.user);
 				}
+				connBadge.textContent = 'Live \u00B7 Catalyst';
+				connBadge.className = 'status-pill live';
 				renderProducts();
 			} catch (err) {
 				connBadge.textContent = 'Connection Error';
 				connBadge.className = 'status-pill warn';
 				if (productsBody) {
-					productsBody.innerHTML = `<tr><td colspan="7" style="color:var(--danger-ink);font-weight:600;">${escapeHtml(err.message)}</td></tr>`;
+					productsBody.innerHTML = `<tr><td colspan="7" style="color:var(--danger-ink);font-weight:600;padding:24px;text-align:center;">Failed to fetch catalog: ${escapeHtml(err.message || 'Server unreachable')}</td></tr>`;
 				}
 			}
 		}
@@ -2708,7 +5104,19 @@
 				state.products = data.products || [];
 				renderProducts();
 				showBanner('success', `Restocked SKU ${sku} (+50 units). New stock: ${data.restocked.newStock}.`);
+
+				// EGM Phase 1, 3, 4: Audio, Shift Audit & Bus
+				SoundFx.playSuccess();
+				ShiftAuditLedger.record({
+					action: 'RESTOCK',
+					sku,
+					itemName: data.restocked.itemName || ('SKU ' + sku),
+					delta: 50,
+					closingStock: data.restocked.newStock
+				});
+				InventoryBus.emit('INVENTORY_SYNC', { products: state.products });
 			} catch (err) {
+				SoundFx.playError();
 				showBanner('error', err.message);
 			}
 		}
@@ -2725,12 +5133,14 @@
 			skuInput.value = chip.dataset.sku;
 			updatePreview();
 			qtyInput.focus();
+			SoundFx.playClick();
 		});
 
 		document.querySelectorAll('.qty-preset').forEach((btn) => {
 			btn.addEventListener('click', () => {
 				qtyInput.value = btn.dataset.qty;
 				updatePreview();
+				SoundFx.playClick();
 			});
 		});
 
@@ -2748,6 +5158,7 @@
 				qtyInput.value = '5';
 				updatePreview();
 				skuInput.focus();
+				SoundFx.playClick();
 			});
 		}
 
@@ -2780,7 +5191,50 @@
 				renderProducts();
 				renderAgentResult(data);
 				showBanner('success', `Logged ${soldQty} unit(s) sold for SKU ${sku}.`);
+
+				// EGM Phase 1, 3, 4: Audio Feedback, Audit Ledger & Reactive State
+				const closingStock = data.sale ? data.sale.newStock : 0;
+				const itemName = data.sale ? data.sale.itemName : ('SKU ' + sku);
+				const isReorder = data.reorderDecision && data.reorderDecision.triggered;
+
+				if (isReorder) {
+					SoundFx.playWarning();
+				} else {
+					SoundFx.playSuccess();
+				}
+
+				ShiftAuditLedger.record({
+					action: 'SALE',
+					sku,
+					itemName,
+					delta: -soldQty,
+					closingStock
+				});
+
+				if (isReorder) {
+					ShiftAuditLedger.record({
+						action: 'PAR_ALERT',
+						sku,
+						itemName,
+						delta: 0,
+						closingStock,
+						details: `Reached reorder threshold (${data.reorderDecision.reorderLevel} units)`
+					});
+				}
+				if (data.emailDraft) {
+					ShiftAuditLedger.record({
+						action: 'PO_DISPATCH',
+						sku,
+						itemName,
+						delta: 0,
+						closingStock,
+						details: `Supplier PO drafted: ${data.reorderDecision ? data.reorderDecision.reorderQty : 0} units`
+					});
+				}
+
+				InventoryBus.emit('INVENTORY_SYNC', { products: state.products });
 			} catch (err) {
+				SoundFx.playError();
 				showBanner('error', err.message);
 			} finally {
 				submitBtn.disabled = false;
@@ -2793,11 +5247,15 @@
 		const productsView = document.getElementById('productsView');
 		const alertsView = document.getElementById('alertsView');
 		const addSkuView = document.getElementById('addSkuView');
+		const usersView = document.getElementById('usersView');
+		const expensesView = document.getElementById('expensesView');
 		const tabScanner = document.getElementById('tabScanner');
 		const tabDashboard = document.getElementById('tabDashboard');
 		const tabProducts = document.getElementById('tabProducts');
 		const tabAlerts = document.getElementById('tabAlerts');
 		const tabAddSku = document.getElementById('tabAddSku');
+		const tabUsers = document.getElementById('tabUsers');
+		const tabExpenses = document.getElementById('tabExpenses');
 
 		const alertsState = { search: '', busySku: null, banner: null };
 		const addSkuState = { sku: '', itemName: '', stockCount: '30', reorderLevel: '10', supplierEmail: '', saving: false, banner: null };
@@ -3308,6 +5766,27 @@
 			}
 		});
 
+		var userManagerModule = window.createUserModule ? window.createUserModule({
+			container: usersView,
+			apiFetch: apiFetch,
+			API_BASE: API_BASE,
+			getCurrentUser: () => state.currentUser,
+			onUsersChanged: (users) => {
+				const badge = document.getElementById('sidebarUserCount');
+				if (badge) {
+					badge.textContent = users.length;
+					badge.hidden = users.length === 0;
+				}
+			}
+		}) : null;
+
+		var expenseManagerModule = window.createExpenseModule ? window.createExpenseModule({
+			container: expensesView,
+			apiFetch: apiFetch,
+			API_BASE: API_BASE,
+			getCurrentUser: () => state.currentUser
+		}) : null;
+
 		const VIEW_META = {
 			scanner: {
 				title: 'Scanner Terminal',
@@ -3328,6 +5807,14 @@
 			'add-sku': {
 				title: 'Add New SKU',
 				sub: 'Register New 3-Digit Product SKUs with Live Threshold Simulation'
+			},
+			users: {
+				title: 'User Management',
+				sub: 'Catalyst Data Store Users \u00B7 Credentials, Roles & Access Control'
+			},
+			expenses: {
+				title: 'Zoho Expense Management',
+				sub: 'Direct Catalyst Connection \u00B7 Synchronized Expense Ledger & Inventory Costs'
 			}
 		};
 
@@ -3381,19 +5868,23 @@
 		}
 
 		function setActiveView(view, navOverride) {
-			const validViews = new Set(['scanner', 'dashboard', 'products', 'alerts', 'add-sku']);
+			const validViews = new Set(['scanner', 'dashboard', 'products', 'alerts', 'add-sku', 'users', 'expenses']);
 			const normalized = validViews.has(view) ? view : 'scanner';
 			scannerView.hidden = normalized !== 'scanner';
 			dashboardView.hidden = normalized !== 'dashboard';
 			productsView.hidden = normalized !== 'products';
 			if (alertsView) alertsView.hidden = normalized !== 'alerts';
 			if (addSkuView) addSkuView.hidden = normalized !== 'add-sku';
+			if (usersView) usersView.hidden = normalized !== 'users';
+			if (expensesView) expensesView.hidden = normalized !== 'expenses';
 
 			tabScanner.classList.toggle('active', normalized === 'scanner');
 			tabDashboard.classList.toggle('active', normalized === 'dashboard');
 			tabProducts.classList.toggle('active', normalized === 'products');
 			if (tabAlerts) tabAlerts.classList.toggle('active', normalized === 'alerts');
 			if (tabAddSku) tabAddSku.classList.toggle('active', normalized === 'add-sku');
+			if (tabUsers) tabUsers.classList.toggle('active', normalized === 'users');
+			if (tabExpenses) tabExpenses.classList.toggle('active', normalized === 'expenses');
 			syncNavHighlight(navOverride || normalized);
 
 			const meta = VIEW_META[normalized] || VIEW_META.scanner;
@@ -3417,6 +5908,12 @@
 				renderAddSkuView();
 				const codeEl = addSkuView.querySelector('#newSkuCodeInput');
 				if (codeEl) codeEl.focus();
+				return Promise.resolve();
+			} else if (normalized === 'users') {
+				if (userManagerModule) userManagerModule.load();
+				return Promise.resolve();
+			} else if (normalized === 'expenses') {
+				if (expenseManagerModule) expenseManagerModule.load();
 				return Promise.resolve();
 			}
 			return Promise.resolve();
@@ -3472,9 +5969,157 @@
 		if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', () => setDrawerOpen(false));
 		if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => setDrawerOpen(true));
 		if (topbarAlertBtn) topbarAlertBtn.addEventListener('click', () => setActiveView('alerts'));
+		// ============================================================
+		// EGM Phase 1: Audio Synthesizer Control
+		// ============================================================
+		const soundToggleBtn = document.getElementById('soundToggleBtn');
+		const soundToggleText = document.getElementById('soundToggleText');
+		function updateAudioBtnUI() {
+			if (!soundToggleBtn) return;
+			const muted = SoundFx.isMuted();
+			soundToggleBtn.classList.toggle('muted', muted);
+			if (soundToggleText) soundToggleText.textContent = muted ? 'Muted' : 'Audio';
+			soundToggleBtn.title = muted ? 'Unmute Scanner Audio Beeps (Key: M)' : 'Mute Scanner Audio Beeps (Key: M)';
+		}
+		function toggleAudio() {
+			const muted = SoundFx.toggleMute();
+			updateAudioBtnUI();
+			if (!muted) SoundFx.playSuccess();
+		}
+		if (soundToggleBtn) {
+			soundToggleBtn.addEventListener('click', toggleAudio);
+			updateAudioBtnUI();
+		}
+
+		// ============================================================
+		// Light & Dark Theme Manager Wiring
+		// ============================================================
+		const themeToggleBtn = document.getElementById('themeToggleBtn');
+		if (themeToggleBtn) {
+			themeToggleBtn.addEventListener('click', () => {
+				ThemeManager.toggleTheme();
+			});
+		}
+		ThemeManager.init();
+
+		// ============================================================
+		// EGM Phase 3: Shift Audit Ledger Actions
+		// ============================================================
+		const exportAuditCsvBtn = document.getElementById('exportAuditCsvBtn');
+		if (exportAuditCsvBtn) {
+			exportAuditCsvBtn.addEventListener('click', () => {
+				SoundFx.playClick();
+				ShiftAuditLedger.exportCsv();
+			});
+		}
+		const clearAuditBtn = document.getElementById('clearAuditBtn');
+		if (clearAuditBtn) {
+			clearAuditBtn.addEventListener('click', () => {
+				if (confirm('Clear shift audit transactions log?')) {
+					ShiftAuditLedger.clear();
+					SoundFx.playClick();
+				}
+			});
+		}
+		ShiftAuditLedger.render();
+
+		// ============================================================
+		// EGM Phase 2: Global Warehouse Keybindings
+		// Hardware-friendly hotkeys for rapid barcode scanning
+		// ============================================================
 		window.addEventListener('keydown', (e) => {
-			if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) {
-				setDrawerOpen(false);
+			const tag = (e.target && e.target.tagName ? e.target.tagName : '').toLowerCase();
+			const isInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+			// ESCAPE: Dismiss drawers, modals, or clear scanner input
+			if (e.key === 'Escape') {
+				if (document.body.classList.contains('drawer-open')) {
+					setDrawerOpen(false);
+					return;
+				}
+				if (authModal && authModal.classList.contains('active')) {
+					closeAuthModal();
+					return;
+				}
+				if (skuInput) {
+					skuInput.value = '';
+					updatePreview();
+					skuInput.focus();
+				}
+				return;
+			}
+
+			// T: Toggle Light/Dark Theme (when not typing in an input)
+			if (!isInput && (e.key === 't' || e.key === 'T') && !e.altKey && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+				ThemeManager.toggleTheme();
+				return;
+			}
+
+			// M: Toggle Audio Beep Mode (when not typing in an input)
+			if (!isInput && (e.key === 'm' || e.key === 'M') && !e.altKey && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+				toggleAudio();
+				return;
+			}
+
+			// FORWARD SLASH (/): Global Scan Focus (when not already in an input)
+			if (!isInput && e.key === '/' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+				setActiveView('scanner');
+				if (skuInput) {
+					skuInput.focus();
+					skuInput.select();
+				}
+				return;
+			}
+
+			// ALT + 1..5: Instant View Switching
+			if (e.altKey && !e.ctrlKey && !e.metaKey) {
+				if (e.key === '1') { e.preventDefault(); setActiveView('scanner'); }
+				else if (e.key === '2') { e.preventDefault(); setActiveView('dashboard'); }
+				else if (e.key === '3') { e.preventDefault(); setActiveView('products'); }
+				else if (e.key === '4') { e.preventDefault(); setActiveView('alerts'); }
+				else if (e.key === '5') {
+					if (state.currentUser && (state.currentUser.roleName === 'Administrator' || state.currentUser.roleName === 'Manager')) {
+						e.preventDefault();
+						setActiveView('users');
+					}
+				}
+				return;
+			}
+
+			// + or = : Increment units sold in scanner
+			if ((e.key === '+' || e.key === '=') && !isInput) {
+				e.preventDefault();
+				if (qtyInput) {
+					qtyInput.value = Math.max(1, Number(qtyInput.value || 1) + 1);
+					updatePreview();
+					SoundFx.playClick();
+				}
+				return;
+			}
+
+			// - or _ : Decrement units sold in scanner
+			if ((e.key === '-' || e.key === '_') && !isInput) {
+				e.preventDefault();
+				if (qtyInput) {
+					qtyInput.value = Math.max(1, Number(qtyInput.value || 1) - 1);
+					updatePreview();
+					SoundFx.playClick();
+				}
+				return;
+			}
+
+			// 1..5: Quantity Presets (1, 5, 10, 25, 50) when not typing in an input
+			if (!isInput && ['1', '2', '3', '4', '5'].includes(e.key) && !e.altKey && !e.ctrlKey && !e.metaKey) {
+				const presets = { '1': '1', '2': '5', '3': '10', '4': '25', '5': '50' };
+				if (qtyInput) {
+					qtyInput.value = presets[e.key];
+					updatePreview();
+					SoundFx.playClick();
+				}
+				return;
 			}
 		});
 		window.addEventListener('resize', () => {
@@ -3488,22 +6133,55 @@
 		tabProducts.addEventListener('click', () => setActiveView('products'));
 		if (tabAlerts) tabAlerts.addEventListener('click', () => setActiveView('alerts'));
 		if (tabAddSku) tabAddSku.addEventListener('click', () => setActiveView('add-sku'));
+		if (tabUsers) tabUsers.addEventListener('click', () => setActiveView('users'));
+		if (tabExpenses) tabExpenses.addEventListener('click', () => setActiveView('expenses'));
 		window.addEventListener('hashchange', () => {
 			if (!state.currentUser) return;
 			if (location.hash === '#dashboard') setActiveView('dashboard');
 			else if (location.hash === '#products') setActiveView('products');
 			else if (location.hash === '#alerts') setActiveView('alerts');
 			else if (location.hash === '#add-sku') setActiveView('add-sku');
+			else if (location.hash === '#users') setActiveView('users');
 			else if (location.hash === '#scanner') setActiveView('scanner');
 		});
 
-		const authGateView = document.getElementById('authGateView');
+		const landingPageView = document.getElementById('landingPageView');
+		const authModal = document.getElementById('authModal');
+		const authModalCloseBtn = document.getElementById('authModalCloseBtn');
+		const authTabSignIn = document.getElementById('authTabSignIn');
+		const authTabSignUp = document.getElementById('authTabSignUp');
+		const authModalBanner = document.getElementById('authModalBanner');
+		const authLoadingState = document.getElementById('authLoadingState');
+
+		const customLoginForm = document.getElementById('customLoginForm');
+		const loginUsername = document.getElementById('loginUsername');
+		const loginPassword = document.getElementById('loginPassword');
+		const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+
+		const customSignUpForm = document.getElementById('customSignUpForm');
+		const signupFullName = document.getElementById('signupFullName');
+		const signupUsername = document.getElementById('signupUsername');
+		const signupEmail = document.getElementById('signupEmail');
+		const signupRole = document.getElementById('signupRole');
+		const signupPassword = document.getElementById('signupPassword');
+		const signupConfirmPassword = document.getElementById('signupConfirmPassword');
+		const signupSubmitBtn = document.getElementById('signupSubmitBtn');
+
+		const lpNavSignInBtn = document.getElementById('lpNavSignInBtn');
+		const lpNavSignUpBtn = document.getElementById('lpNavSignUpBtn');
+		const lpNavConsoleBtn = document.getElementById('lpNavConsoleBtn');
+		const lpHeroLaunchBtn = document.getElementById('lpHeroLaunchBtn');
+		const lpHeroSignUpBtn = document.getElementById('lpHeroSignUpBtn');
+		const lpHeroQuickDemoBtn = document.getElementById('lpHeroQuickDemoBtn');
+		const sidebarLandingBtn = document.getElementById('sidebarLandingBtn');
+
+		const lpDemoStock = document.getElementById('lpDemoStock');
+		const lpDemoMeter = document.getElementById('lpDemoMeter');
+		const lpDemoScanBtn = document.getElementById('lpDemoScanBtn');
+		const lpDemoResetBtn = document.getElementById('lpDemoResetBtn');
+
 		const appHeader = document.getElementById('appHeader');
 		const appShell = document.getElementById('appShell');
-		const authLoadingState = document.getElementById('authLoadingState');
-		const authBanner = document.getElementById('authBanner');
-		const authLocalTip = document.getElementById('authLocalTip');
-		const loginContainer = document.getElementById('login-container');
 		const userAvatar = document.getElementById('userAvatar');
 		const userNameEl = document.getElementById('userName');
 		const userRoleEl = document.getElementById('userRole');
@@ -3531,41 +6209,95 @@
 			userRoleEl.textContent = user.roleName || 'App User';
 		}
 
-		function setAuthBanner(type, message) {
+		function setAuthModalBanner(type, message) {
+			if (!authModalBanner) return;
 			if (!message) {
-				authBanner.hidden = true;
-				authBanner.textContent = '';
+				clearAuthModalBanner();
 				return;
 			}
-			authBanner.hidden = false;
-			authBanner.className = `auth-banner ${type === 'info' ? 'info' : 'error'}`;
-			authBanner.textContent = message;
+			authModalBanner.className = `auth-modal-banner ${type || 'info'}`;
+			authModalBanner.textContent = message;
+			authModalBanner.style.display = 'block';
 		}
 
-		async function showLoginScreen(bannerType, bannerMessage) {
+		function clearAuthModalBanner() {
+			if (!authModalBanner) return;
+			authModalBanner.className = 'auth-modal-banner';
+			authModalBanner.textContent = '';
+			authModalBanner.style.display = 'none';
+		}
+
+		function switchAuthTab(tab) {
+			clearAuthModalBanner();
+			if (tab === 'signup') {
+				if (authTabSignIn) {
+					authTabSignIn.classList.remove('active');
+					authTabSignIn.setAttribute('aria-selected', 'false');
+				}
+				if (authTabSignUp) {
+					authTabSignUp.classList.add('active');
+					authTabSignUp.setAttribute('aria-selected', 'true');
+				}
+				if (customLoginForm) customLoginForm.style.display = 'none';
+				if (customSignUpForm) customSignUpForm.style.display = 'flex';
+				setTimeout(() => { if (signupFullName) signupFullName.focus(); }, 60);
+			} else {
+				if (authTabSignUp) {
+					authTabSignUp.classList.remove('active');
+					authTabSignUp.setAttribute('aria-selected', 'false');
+				}
+				if (authTabSignIn) {
+					authTabSignIn.classList.add('active');
+					authTabSignIn.setAttribute('aria-selected', 'true');
+				}
+				if (customSignUpForm) customSignUpForm.style.display = 'none';
+				if (customLoginForm) customLoginForm.style.display = 'flex';
+				setTimeout(() => { if (loginUsername) loginUsername.focus(); }, 60);
+			}
+		}
+
+		function openAuthModal(tab = 'signin', bannerMsg = null, bannerType = 'error') {
+			if (!authModal) return;
+			authModal.classList.add('active');
+			authModal.setAttribute('aria-hidden', 'false');
+			switchAuthTab(tab);
+			if (bannerMsg) {
+				setAuthModalBanner(bannerType, bannerMsg);
+			} else {
+				clearAuthModalBanner();
+			}
+		}
+
+		function closeAuthModal() {
+			if (!authModal) return;
+			authModal.classList.remove('active');
+			authModal.setAttribute('aria-hidden', 'true');
+			clearAuthModalBanner();
+		}
+
+		function showLoginScreen(bannerType, bannerMessage) {
 			state.currentUser = null;
 			setWorkspaceVisible(false);
-			authGateView.hidden = false;
-			authLoadingState.hidden = true;
-			loginContainer.hidden = false;
-			if (authLocalTip) {
-				authLocalTip.hidden = !isLocalhost;
-			}
-			setAuthBanner(bannerType, bannerMessage);
-
-			try {
-				await window.SmartAuth.mountEmbeddedSignIn('login-container');
-			} catch (err) {
-				loginContainer.hidden = true;
-				setAuthBanner('error', err.message || 'Unable to mount Catalyst Embedded Login.');
+			if (landingPageView) landingPageView.hidden = false;
+			if (lpNavConsoleBtn) lpNavConsoleBtn.style.display = 'none';
+			if (lpNavSignInBtn) lpNavSignInBtn.style.display = 'inline-flex';
+			if (lpNavSignUpBtn) lpNavSignUpBtn.style.display = 'inline-flex';
+			if (authLoadingState) authLoadingState.hidden = true;
+			if (bannerMessage) {
+				openAuthModal('signin', bannerMessage, bannerType || 'info');
 			}
 		}
 
 		function showSignedInWorkspace(user) {
 			state.currentUser = user;
 			updateUserChip(user);
-			authGateView.hidden = true;
+			closeAuthModal();
+			if (landingPageView) landingPageView.hidden = true;
 			setWorkspaceVisible(true);
+			ThemeManager.init();
+			if (lpNavConsoleBtn) lpNavConsoleBtn.style.display = 'inline-flex';
+			if (lpNavSignInBtn) lpNavSignInBtn.style.display = 'none';
+			if (lpNavSignUpBtn) lpNavSignUpBtn.style.display = 'none';
 
 			if (location.hash === '#dashboard' || location.pathname.endsWith('/dashboard')) {
 				setActiveView('dashboard');
@@ -3575,48 +6307,308 @@
 				setActiveView('alerts');
 			} else if (location.hash === '#add-sku') {
 				setActiveView('add-sku');
+			} else if (location.hash === '#users' || location.pathname.endsWith('/users')) {
+				setActiveView('users');
+			} else {
+				setActiveView('scanner');
 			}
 
 			fetchProducts().then(() => {
 				productManagerModule.setProducts(state.products);
 				if (alertsView && !alertsView.hidden) renderAlertsView();
 				if (addSkuView && !addSkuView.hidden) renderAddSkuView();
+				ShiftAuditLedger.render();
+				updateAudioBtnUI();
+			});
+			if (userManagerModule) {
+				userManagerModule.load();
+			}
+			ShiftAuditLedger.render();
+			updateAudioBtnUI();
+		}
+
+		// Auth Modal event listeners
+		if (authModalCloseBtn) {
+			authModalCloseBtn.addEventListener('click', closeAuthModal);
+		}
+		if (authModal) {
+			authModal.addEventListener('click', (e) => {
+				if (e.target === authModal) closeAuthModal();
+			});
+		}
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && authModal && authModal.classList.contains('active')) {
+				closeAuthModal();
+			}
+		});
+
+		if (authTabSignIn) {
+			authTabSignIn.addEventListener('click', () => switchAuthTab('signin'));
+		}
+		if (authTabSignUp) {
+			authTabSignUp.addEventListener('click', () => switchAuthTab('signup'));
+		}
+
+		// Landing Page triggers
+		if (lpNavSignInBtn) lpNavSignInBtn.addEventListener('click', () => openAuthModal('signin'));
+		if (lpNavSignUpBtn) lpNavSignUpBtn.addEventListener('click', () => openAuthModal('signup'));
+		if (lpHeroSignUpBtn) lpHeroSignUpBtn.addEventListener('click', () => openAuthModal('signup'));
+		if (lpNavConsoleBtn) {
+			lpNavConsoleBtn.addEventListener('click', () => {
+				if (state.currentUser) {
+					if (landingPageView) landingPageView.hidden = true;
+					setWorkspaceVisible(true);
+				} else {
+					openAuthModal('signin');
+				}
+			});
+		}
+		if (lpHeroLaunchBtn) {
+			lpHeroLaunchBtn.addEventListener('click', () => {
+				if (state.currentUser) {
+					if (landingPageView) landingPageView.hidden = true;
+					setWorkspaceVisible(true);
+				} else {
+					openAuthModal('signin');
+				}
 			});
 		}
 
-		window.SmartAuth.setUnauthorizedHandler(() => {
-			showLoginScreen('error', 'Your session expired or lacks App User access. Please sign in again.');
+		document.querySelectorAll('.lp-signin-trigger').forEach((btn) => {
+			btn.addEventListener('click', () => openAuthModal('signin'));
+		});
+		document.querySelectorAll('.lp-signup-trigger').forEach((btn) => {
+			btn.addEventListener('click', () => openAuthModal('signup'));
 		});
 
-		signOutBtn.addEventListener('click', () => {
-			window.SmartAuth.signOut();
+		// FAQ Accordion Interactivity
+		document.querySelectorAll('.faq-question').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const item = btn.closest('.faq-item');
+				if (!item) return;
+				const isOpen = item.classList.contains('open');
+				document.querySelectorAll('.faq-item').forEach((i) => {
+					i.classList.remove('open');
+					const q = i.querySelector('.faq-question');
+					if (q) q.setAttribute('aria-expanded', 'false');
+				});
+				if (!isOpen) {
+					item.classList.add('open');
+					btn.setAttribute('aria-expanded', 'true');
+				}
+			});
 		});
+
+		// 1-Click Demo (Admin) button
+		if (lpHeroQuickDemoBtn) {
+			lpHeroQuickDemoBtn.addEventListener('click', async () => {
+				try {
+					lpHeroQuickDemoBtn.disabled = true;
+					lpHeroQuickDemoBtn.innerHTML = '<span>Signing in...</span>';
+					const res = await window.SmartAuth.signIn(API_BASE, 'admin', 'admin123');
+					if (res && res.user) {
+						if (res.capabilities) updateCapabilityBadges(res.capabilities);
+						showSignedInWorkspace(res.user);
+						showBanner('ok', `Signed in as ${res.user.fullName || 'Admin'} (demo mode)`);
+					} else {
+						openAuthModal('signin', 'Demo auto-login failed. Please sign in manually.');
+					}
+				} catch (err) {
+					openAuthModal('signin', 'Demo auto-login failed: ' + (err.message || 'Please sign in manually.'));
+				} finally {
+					lpHeroQuickDemoBtn.disabled = false;
+					lpHeroQuickDemoBtn.innerHTML = '<span>Demo Login (Admin)</span>';
+				}
+			});
+		}
+
+		// Return to landing page from workspace sidebar
+		if (sidebarLandingBtn) {
+			sidebarLandingBtn.addEventListener('click', () => {
+				setWorkspaceVisible(false);
+				if (landingPageView) landingPageView.hidden = false;
+				if (state.currentUser) {
+					if (lpNavConsoleBtn) lpNavConsoleBtn.style.display = 'inline-flex';
+					if (lpNavSignInBtn) lpNavSignInBtn.style.display = 'none';
+					if (lpNavSignUpBtn) lpNavSignUpBtn.style.display = 'none';
+				}
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			});
+		}
+
+		// Interactive demo scanner simulation on landing page
+		let lpDemoUnits = 62;
+		const LP_DEMO_MAX = 80;
+		if (lpDemoScanBtn && lpDemoStock && lpDemoMeter) {
+			lpDemoScanBtn.addEventListener('click', () => {
+				lpDemoUnits = Math.max(4, lpDemoUnits - 2);
+				lpDemoStock.textContent = `${lpDemoUnits} units`;
+				const pct = Math.round((lpDemoUnits / LP_DEMO_MAX) * 100);
+				lpDemoMeter.style.width = `${pct}%`;
+				if (lpDemoUnits <= 10) {
+					lpDemoMeter.style.background = '#ef4444';
+					lpDemoStock.style.color = '#f87171';
+				} else if (lpDemoUnits <= 20) {
+					lpDemoMeter.style.background = '#f59e0b';
+					lpDemoStock.style.color = '#fbbf24';
+				} else {
+					lpDemoMeter.style.background = 'linear-gradient(90deg, #10b981, #3b82f6)';
+					lpDemoStock.style.color = '#38bdf8';
+				}
+			});
+		}
+		if (lpDemoResetBtn && lpDemoStock && lpDemoMeter) {
+			lpDemoResetBtn.addEventListener('click', () => {
+				lpDemoUnits = 62;
+				lpDemoStock.textContent = '62 units';
+				lpDemoStock.style.color = '#38bdf8';
+				lpDemoMeter.style.width = '75%';
+				lpDemoMeter.style.background = 'linear-gradient(90deg, #10b981, #3b82f6)';
+			});
+		}
+
+		// TAB 1: Sign In Form Submission
+		if (customLoginForm) {
+			customLoginForm.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				clearAuthModalBanner();
+				const identifier = (loginUsername?.value || '').trim();
+				const password = loginPassword?.value || '';
+				if (!identifier || !password) {
+					setAuthModalBanner('error', 'Please enter your username/email and password.');
+					return;
+				}
+				if (loginSubmitBtn) {
+					loginSubmitBtn.disabled = true;
+					loginSubmitBtn.textContent = 'Verifying credentials...';
+				}
+				try {
+					const res = await window.SmartAuth.signIn(API_BASE, identifier, password);
+					if (res && res.user) {
+						if (res.capabilities) updateCapabilityBadges(res.capabilities);
+						showSignedInWorkspace(res.user);
+					} else {
+						setAuthModalBanner('error', 'Invalid username or password.');
+					}
+				} catch (err) {
+					setAuthModalBanner('error', err.message || 'Authentication failed. Please verify credentials.');
+				} finally {
+					if (loginSubmitBtn) {
+						loginSubmitBtn.disabled = false;
+						loginSubmitBtn.textContent = 'Sign In to Console';
+					}
+				}
+			});
+		}
+
+		// TAB 2: Sign Up Form Submission
+		if (customSignUpForm) {
+			customSignUpForm.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				clearAuthModalBanner();
+				const fullName = (signupFullName?.value || '').trim();
+				const username = (signupUsername?.value || '').trim();
+				const email = (signupEmail?.value || '').trim();
+				const role = signupRole?.value || 'Operator';
+				const password = signupPassword?.value || '';
+				const confirmPassword = signupConfirmPassword?.value || '';
+
+				if (!fullName || !username || !email || !password) {
+					setAuthModalBanner('error', 'Please fill in all required fields.');
+					return;
+				}
+				if (password.length < 4) {
+					setAuthModalBanner('error', 'Password must be at least 4 characters long.');
+					return;
+				}
+				if (password !== confirmPassword) {
+					setAuthModalBanner('error', 'Passwords do not match. Please re-type your password.');
+					return;
+				}
+
+				if (signupSubmitBtn) {
+					signupSubmitBtn.disabled = true;
+					signupSubmitBtn.textContent = 'Creating account...';
+				}
+
+				try {
+					const res = await window.SmartAuth.signUp(API_BASE, {
+						fullName,
+						username,
+						email,
+						role,
+						password
+					});
+
+					if (res && res.user) {
+						if (res.capabilities) updateCapabilityBadges(res.capabilities);
+						showSignedInWorkspace(res.user);
+						showBanner('ok', `Account created successfully. Welcome, ${res.user.fullName || res.user.username}.`);
+					} else {
+						setAuthModalBanner('error', 'Registration succeeded, but no session returned. Please sign in.');
+						switchAuthTab('signin');
+					}
+				} catch (err) {
+					setAuthModalBanner('error', err.message || 'Registration failed. Please check inputs and try again.');
+				} finally {
+					if (signupSubmitBtn) {
+						signupSubmitBtn.disabled = false;
+						signupSubmitBtn.textContent = 'Create Account & Enter Console';
+					}
+				}
+			});
+		}
+
+		// Quick login preset chips
+		document.querySelectorAll('.login-preset').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				if (loginUsername) loginUsername.value = btn.dataset.user || '';
+				if (loginPassword) loginPassword.value = btn.dataset.pass || '';
+				if (loginPassword) loginPassword.focus();
+			});
+		});
+
+		window.SmartAuth.setUnauthorizedHandler(() => {
+			showLoginScreen('error', 'Your session expired or is invalid. Please sign in again.');
+		});
+
+		if (signOutBtn) {
+			signOutBtn.addEventListener('click', async () => {
+				await window.SmartAuth.signOut(API_BASE);
+				showLoginScreen('info', 'You have been signed out.');
+			});
+		}
 		if (sidebarSignOutBtn) {
-			sidebarSignOutBtn.addEventListener('click', () => {
-				window.SmartAuth.signOut();
+			sidebarSignOutBtn.addEventListener('click', async () => {
+				await window.SmartAuth.signOut(API_BASE);
+				showLoginScreen('info', 'You have been signed out.');
 			});
 		}
 
 		async function bootstrapAuth() {
-			authGateView.hidden = false;
 			setWorkspaceVisible(false);
-			authLoadingState.hidden = false;
-			loginContainer.hidden = true;
-			setAuthBanner(null, '');
+			if (landingPageView) landingPageView.hidden = false;
 
-			const session = await window.SmartAuth.checkSession();
+			const session = await window.SmartAuth.checkSession(API_BASE);
 			if (session.authenticated && session.user) {
 				showSignedInWorkspace(session.user);
 				return;
 			}
 
+			// Public landing page is shown
+			if (landingPageView) landingPageView.hidden = false;
+			if (lpNavConsoleBtn) lpNavConsoleBtn.style.display = 'none';
+			if (lpNavSignInBtn) lpNavSignInBtn.style.display = 'inline-flex';
+			if (lpNavSignUpBtn) lpNavSignUpBtn.style.display = 'inline-flex';
+
 			if (session.signedOut) {
-				await showLoginScreen('info', 'Signed out. Enter your Catalyst App User credentials to return to the workspace.');
+				openAuthModal('signin', 'Signed out. Enter your credentials to return to the workspace.', 'info');
 				return;
 			}
 
-			const initError = session.error && /did not initialize/i.test(session.error) ? session.error : '';
-			await showLoginScreen(initError ? 'error' : null, initError);
+			if (session.error) {
+				openAuthModal('signin', session.error, 'error');
+			}
 		}
 
 		bootstrapAuth();

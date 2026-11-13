@@ -39,10 +39,10 @@
 		};
 
 		const DIST_COLORS = {
-			out_of_stock: '#dc2626',
-			low_stock: '#d97706',
-			healthy: '#059669',
-			overstock: '#0f62fe'
+			out_of_stock: 'var(--danger, #dc2626)',
+			low_stock: 'var(--warn, #d97706)',
+			healthy: 'var(--ok, #059669)',
+			overstock: 'var(--primary, #2563eb)'
 		};
 
 		function statusBadgeClass(status) {
@@ -121,6 +121,9 @@
 			try {
 				const url = `${apiBase}/stock-analysis?stagnantHours=${encodeURIComponent(state.stagnantHours)}`;
 				const res = await fetcher(url);
+				if (res.status === 401) {
+					throw new Error('Session expired or login required. Please sign in to view stock analytics.');
+				}
 				const data = await res.json();
 				if (!res.ok || !data.ok) {
 					throw new Error(data.error || 'Failed to load stock analysis');
@@ -154,14 +157,14 @@
 					const dashArray = `${segLen} ${circumference}`;
 					const dashOffset = -offset;
 					offset += fraction * circumference;
-					return `<circle cx="64" cy="64" r="${radius}" fill="none" stroke="${DIST_COLORS[d.key] || '#059669'}" stroke-width="14" stroke-dasharray="${dashArray}" stroke-dashoffset="${dashOffset}" stroke-linecap="butt" />`;
+					return `<circle cx="64" cy="64" r="${radius}" fill="none" stroke="${DIST_COLORS[d.key] || 'var(--ok)'}" stroke-width="14" stroke-dasharray="${dashArray}" stroke-dashoffset="${dashOffset}" stroke-linecap="butt" />`;
 				})
 				.join('');
 
 			return `
 				<div class="donut-wrap">
 					<svg class="donut-svg" viewBox="0 0 128 128" width="132" height="132" aria-label="Inventory health donut chart">
-						<circle cx="64" cy="64" r="${radius}" fill="none" stroke="#eef2f7" stroke-width="14" />
+						<circle cx="64" cy="64" r="${radius}" fill="none" stroke="var(--border)" stroke-width="14" />
 						<g transform="rotate(-90 64 64)">${segments}</g>
 						<text x="64" y="61" text-anchor="middle" class="donut-score">${summary.healthScore}%</text>
 						<text x="64" y="77" text-anchor="middle" class="donut-sub">HEALTH</text>

@@ -100,6 +100,9 @@
 			render();
 			try {
 				const res = await fetcher(`${apiBase}/products`);
+				if (res.status === 401) {
+					throw new Error('Session expired or login required. Please sign in to manage catalog.');
+				}
 				const data = await res.json();
 				if (!res.ok || !data.ok) {
 					throw new Error(data.error || 'Failed to load catalog');

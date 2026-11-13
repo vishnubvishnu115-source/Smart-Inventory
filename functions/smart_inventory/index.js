@@ -10,19 +10,54 @@ const {
 	updateProduct,
 	deleteProduct
 } = require('./productManager');
+const {
+	listUsers,
+	createUser,
+	updateUser,
+	deleteUser,
+	authenticateCredentials,
+	generateSessionToken,
+	verifySessionToken,
+	extractToken
+} = require('./userManager');
+const {
+	getOrganizations: getExpenseOrganizations,
+	listExpenses,
+	getExpenseSummary,
+	createExpense,
+	listCategories: listExpenseCategories
+} = require('./expenseManager');
 
-function isLocalOrigin(origin) {
-	return typeof origin === 'string' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+function isAllowedOrigin(origin) {
+	if (!origin || typeof origin !== 'string') return false;
+	return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin) ||
+	       /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/i.test(origin) ||
+	       /^https:\/\/[a-z0-9\-]+\.onslate\.in$/i.test(origin) ||
+	       /^https:\/\/[a-z0-9\-]+\.catalystserverless\.in$/i.test(origin) ||
+	       /^https:\/\/[a-z0-9\-]+\.zoho\.(com|in)$/i.test(origin) ||
+	       origin === 'null';
 }
 
 function sendJson(req, res, statusCode, payload) {
 	const headers = { 'Content-Type': 'application/json; charset=utf-8' };
-	const origin = req.headers.origin;
-	if (isLocalOrigin(origin)) {
-		headers['Access-Control-Allow-Origin'] = origin;
-		headers['Access-Control-Allow-Credentials'] = 'true';
-		headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-		headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+	const origin = req.headers.origin || req.headers.Origin;
+	if (origin && isAllowedOrigin(origin)) {
+		// In Catalyst Cloud production, ZGS (Zoho Global Server) automatically injects
+		// 'Access-Control-Allow-Origin: <origin>' and 'Access-Control-Allow-Credentials: true'
+		// for all registered domains (such as *.onslate.in and *.catalystserverless.in).
+		// If the function ALSO sets Access-Control-Allow-Origin, ZGS concatenates them with commas
+		// (e.g. 'https://...onslate.in, https://...onslate.in'), triggering browser CORS violation
+		// and causing all client fetch() calls to fail with "TypeError: Failed to fetch".
+		const hostname = origin.replace(/^https?:\/\//i, '').split(':')[0].toLowerCase();
+		const isZGSManaged = hostname.endsWith('.onslate.in') || hostname.endsWith('.catalystserverless.in');
+
+		if (!isZGSManaged) {
+			headers['Access-Control-Allow-Origin'] = origin;
+			headers['Access-Control-Allow-Credentials'] = 'true';
+		}
+		headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+		headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-session-token, X-Session-Token, x-smart-token, X-Smart-Token, X-Requested-With, Accept, Origin';
+		headers['Access-Control-Expose-Headers'] = 'x-session-token, X-Session-Token, Authorization';
 	}
 	res.writeHead(statusCode, headers);
 	res.end(JSON.stringify(payload));
@@ -63,13 +98,13 @@ function readJsonBody(req) {
 }
 
 function buildTemplateDraft({ sku, itemName, newStock, reorderLevel, reorderQty, supplierEmail }) {
-	const subject = `Restock Order Request: ${itemName} (SKU ${sku}) - ${reorderQty} Units`;
+	const subject = `Purchase Order: ${itemName} (SKU ${sku}) - ${reorderQty} Units`;
 	const body = [
 		`Hello ${supplierEmail.split('@')[0] || 'Supply Team'},`,
 		'',
-		`Our warehouse inventory for ${itemName} (SKU: ${sku}) has dropped to ${newStock} units, which is at or below our reorder threshold of ${reorderLevel} units.`,
+		`Our warehouse stock for ${itemName} (SKU: ${sku}) reached ${newStock} units, hitting our reorder threshold of ${reorderLevel} units.`,
 		'',
-		`Please arrange a restock shipment of ${reorderQty} units of ${itemName} (SKU ${sku}) at your earliest convenience and confirm the estimated delivery date.`,
+		`Please confirm and dispatch an order of ${reorderQty} units of ${itemName} (SKU ${sku}) to our receiving dock.`,
 		'',
 		'Thank you,',
 		'Smart Inventory Operations'
@@ -79,7 +114,18 @@ function buildTemplateDraft({ sku, itemName, newStock, reorderLevel, reorderQty,
 }
 
 async function generateEmailDraft(details) {
-	const prompt = `Stock is low for ${details.itemName} (SKU ${details.sku}, ${details.newStock} remaining vs reorder level ${details.reorderLevel}). Draft a short, polite restock order email to ${details.supplierEmail} requesting ${details.reorderQty} units. Return JSON with keys "subject" and "body" only.`;
+	const prompt = `Write a direct, professional restock purchase order email to supplier ${details.supplierEmail}.
+Item: ${details.itemName} (SKU: ${details.sku})
+Current Stock: ${details.newStock} units
+Reorder Threshold: ${details.reorderLevel} units
+Quantity to Order: ${details.reorderQty} units
+
+Writing constraints:
+- Direct, concise warehouse business prose.
+- No throat-clearing, no filler phrases ("Hope this email finds you well", "I am writing to").
+- No AI fluff or buzzwords.
+- State the order quantity, SKU, and delivery request directly.
+Return JSON with keys "subject" and "body" only.`;
 
 	if (process.env.GEMINI_API_KEY) {
 		try {
@@ -187,7 +233,8 @@ function escapeHtml(value) {
 function getCapabilities() {
 	return {
 		llmConfigured: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
-		liveMailConfigured: Boolean((process.env.CATALYST_FROM_EMAIL || '').trim())
+		liveMailConfigured: Boolean((process.env.CATALYST_FROM_EMAIL || '').trim()),
+		expenseConfigured: true
 	};
 }
 
@@ -221,6 +268,21 @@ async function authenticateAppUser(req) {
 	}
 }
 
+async function resolveCurrentUser(req) {
+	const token = extractToken(req);
+	if (token) {
+		const payload = verifySessionToken(token);
+		if (payload) {
+			return { user: payload };
+		}
+	}
+	const appUser = await authenticateAppUser(req);
+	if (appUser && appUser.user) {
+		return { user: appUser.user };
+	}
+	return null;
+}
+
 module.exports = async (req, res) => {
 	if (req.method === 'OPTIONS') {
 		sendJson(req, res, 204, {});
@@ -228,42 +290,143 @@ module.exports = async (req, res) => {
 	}
 
 	const parsedUrl = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
-	const pathname = parsedUrl.pathname.replace(/^\/execute/, '') || '/';
+	let pathname = parsedUrl.pathname
+		.replace(/^\/server\/smart_inventory/, '')
+		.replace(/^\/execute/, '') || '/';
+	if (pathname.length > 1 && pathname.endsWith('/')) {
+		pathname = pathname.slice(0, -1);
+	}
 
 	try {
-		const auth = await authenticateAppUser(req);
+		const catalystApp = catalyst.initialize(req, { scope: 'admin' });
+		const capabilities = getCapabilities();
+
+		// Public endpoint: Custom Database User Login
+		if (req.method === 'POST' && (pathname === '/login' || pathname === '/users/login')) {
+			const body = await readJsonBody(req);
+			const identifier = body.username || body.identifier || body.email;
+			const password = body.password;
+			const result = await authenticateCredentials(catalystApp, identifier, password);
+			if (result.error) {
+				sendJson(req, res, result.status || 401, { ok: false, error: result.error });
+				return;
+			}
+			sendJson(req, res, 200, {
+				ok: true,
+				token: result.token,
+				user: result.user,
+				capabilities
+			});
+			return;
+		}
+
+		// Public endpoint: Custom Database User Sign Up / Register
+		if (req.method === 'POST' && (pathname === '/signup' || pathname === '/register' || pathname === '/users/signup')) {
+			const body = await readJsonBody(req);
+			const result = await createUser(catalystApp, body);
+			if (result.error) {
+				sendJson(req, res, result.status || 400, { ok: false, error: result.error });
+				return;
+			}
+			const token = generateSessionToken(result.created);
+			sendJson(req, res, 201, {
+				ok: true,
+				token,
+				user: result.created,
+				capabilities
+			});
+			return;
+		}
+
+		// Public endpoint: Logout
+		if (req.method === 'POST' && (pathname === '/logout' || pathname === '/users/logout')) {
+			sendJson(req, res, 200, { ok: true, message: 'Logged out successfully' });
+			return;
+		}
+
+		// Public health check
+		if (req.method === 'GET' && pathname === '/health') {
+			sendJson(req, res, 200, { ok: true, status: 'healthy', capabilities });
+			return;
+		}
+
+		// Protected endpoints check session token or native app user
+		const auth = await resolveCurrentUser(req);
 		if (!auth) {
 			sendJson(req, res, 401, {
 				ok: false,
 				code: 'AUTH_REQUIRED',
-				error: 'Authentication required. Only authorized Catalyst App Users can access SmartStock AI.'
+				error: 'Authentication required. Please sign in using your SmartStock user account.'
 			});
 			return;
 		}
-		if (auth.disabled) {
-			sendJson(req, res, 403, {
-				ok: false,
-				code: 'ACCOUNT_DISABLED',
-				error: 'Your App User account is not active. Contact your administrator.'
-			});
-			return;
-		}
-		if (auth.unconfirmed) {
-			sendJson(req, res, 403, {
-				ok: false,
-				code: 'ACCOUNT_UNCONFIRMED',
-				error: 'Please confirm your invitation email in Manage Application Users before signing in.'
-			});
-			return;
-		}
-
-		const catalystApp = catalyst.initialize(req, { scope: 'admin' });
-		const capabilities = getCapabilities();
 
 		if (req.method === 'GET' && pathname === '/me') {
 			sendJson(req, res, 200, {
 				ok: true,
 				user: auth.user,
+				capabilities
+			});
+			return;
+		}
+
+		// User Management endpoints (Users Table)
+		if (req.method === 'GET' && pathname === '/users') {
+			const users = await listUsers(catalystApp);
+			sendJson(req, res, 200, {
+				ok: true,
+				users,
+				capabilities
+			});
+			return;
+		}
+
+		if (req.method === 'POST' && (pathname === '/users' || pathname === '/users/create')) {
+			const body = await readJsonBody(req);
+			const result = await createUser(catalystApp, body);
+			if (result.error) {
+				sendJson(req, res, result.status || 400, { ok: false, error: result.error });
+				return;
+			}
+			const users = await listUsers(catalystApp);
+			sendJson(req, res, result.status, {
+				ok: true,
+				created: result.created,
+				users,
+				capabilities
+			});
+			return;
+		}
+
+		if (req.method === 'POST' && pathname === '/users/update') {
+			const body = await readJsonBody(req);
+			const result = await updateUser(catalystApp, body.rowId, body);
+			if (result.error) {
+				sendJson(req, res, result.status || 400, { ok: false, error: result.error });
+				return;
+			}
+			const users = await listUsers(catalystApp);
+			sendJson(req, res, result.status, {
+				ok: true,
+				user: result.user,
+				users,
+				capabilities
+			});
+			return;
+		}
+
+		if (req.method === 'POST' && pathname === '/users/delete') {
+			const body = await readJsonBody(req);
+			const result = await deleteUser(catalystApp, body.rowId);
+			if (result.error) {
+				sendJson(req, res, result.status || 400, { ok: false, error: result.error });
+				return;
+			}
+			const users = await listUsers(catalystApp);
+			sendJson(req, res, result.status, {
+				ok: true,
+				deletedRowId: result.deletedRowId,
+				users,
 				capabilities
 			});
 			return;
@@ -294,7 +457,7 @@ module.exports = async (req, res) => {
 			return;
 		}
 
-		if (req.method === 'POST' && (pathname === '/products' || pathname === '/products/create')) {
+		if (req.method === 'POST' && (pathname === '/products' || pathname === '/products/create' || pathname === '/products/add')) {
 			const body = await readJsonBody(req);
 			const result = await createProduct(catalystApp, body);
 			if (result.error) {
@@ -357,7 +520,7 @@ module.exports = async (req, res) => {
 		if (req.method === 'POST' && (pathname === '/' || pathname === '/log-sale')) {
 			const body = await readJsonBody(req);
 			const sku = String(body.sku || '').trim();
-			const soldQty = Number(body.soldQty);
+			const soldQty = Number(body.soldQty ?? body.quantitySold);
 			const sendLiveEmail = body.sendEmail !== false;
 
 			if (!/^\d{3}$/.test(sku)) {
@@ -463,6 +626,69 @@ module.exports = async (req, res) => {
 				restocked: { sku, itemName: product.ItemName, added: addQty, newStock },
 				products
 			});
+			return;
+		}
+
+		// Zoho Expense API Routes via Catalyst Connection ('expense')
+		if (req.method === 'GET' && pathname === '/expenses/organizations') {
+			const orgResult = await getExpenseOrganizations(catalystApp);
+			sendJson(req, res, 200, orgResult);
+			return;
+		}
+
+		if (req.method === 'GET' && pathname === '/expenses/categories') {
+			const orgId = parsedUrl.searchParams.get('organization_id') || parsedUrl.searchParams.get('organizationId');
+			const result = await listExpenseCategories(catalystApp, orgId);
+			if (result.error) {
+				sendJson(req, res, result.status || 500, { ok: false, error: result.error });
+				return;
+			}
+			sendJson(req, res, 200, result);
+			return;
+		}
+
+		if (req.method === 'GET' && pathname === '/expenses/summary') {
+			const orgId = parsedUrl.searchParams.get('organization_id') || parsedUrl.searchParams.get('organizationId');
+			const result = await getExpenseSummary(catalystApp, { organizationId: orgId });
+			if (result.error) {
+				sendJson(req, res, result.status || 500, { ok: false, error: result.error, details: result.details });
+				return;
+			}
+			sendJson(req, res, 200, result);
+			return;
+		}
+
+		if (req.method === 'GET' && pathname === '/expenses') {
+			const orgId = parsedUrl.searchParams.get('organization_id') || parsedUrl.searchParams.get('organizationId');
+			const page = parsedUrl.searchParams.get('page');
+			const perPage = parsedUrl.searchParams.get('per_page');
+			const status = parsedUrl.searchParams.get('status');
+			const categoryId = parsedUrl.searchParams.get('category_id');
+
+			const result = await listExpenses(catalystApp, {
+				organizationId: orgId,
+				page,
+				per_page: perPage,
+				status,
+				category_id: categoryId
+			});
+			if (result.error) {
+				sendJson(req, res, result.status || 500, { ok: false, error: result.error, details: result.details });
+				return;
+			}
+			sendJson(req, res, 200, result);
+			return;
+		}
+
+		if (req.method === 'POST' && pathname === '/expenses') {
+			const body = await readJsonBody(req);
+			const orgId = parsedUrl.searchParams.get('organization_id') || body.organization_id;
+			const result = await createExpense(catalystApp, body, orgId);
+			if (result.error) {
+				sendJson(req, res, result.status || 500, { ok: false, error: result.error, details: result.details });
+				return;
+			}
+			sendJson(req, res, 201, result);
 			return;
 		}
 

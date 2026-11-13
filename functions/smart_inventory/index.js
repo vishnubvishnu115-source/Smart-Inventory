@@ -25,7 +25,8 @@ const {
 	listExpenses,
 	getExpenseSummary,
 	createExpense,
-	listCategories: listExpenseCategories
+	listCategories: listExpenseCategories,
+	listExpensesFromDataStore
 } = require('./expenseManager');
 
 function isAllowedOrigin(origin) {
@@ -655,6 +656,12 @@ module.exports = async (req, res) => {
 				return;
 			}
 			sendJson(req, res, 200, result);
+			return;
+		}
+
+		if (req.method === 'GET' && pathname === '/expenses/datastore') {
+			const result = await listExpensesFromDataStore(catalystApp);
+			sendJson(req, res, result.ok ? 200 : 500, result);
 			return;
 		}
 

@@ -266,11 +266,61 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 		};
 	}
 
+	// Mirror newly created expense into Catalyst Data Store 'Expenses' table
+	try {
+		const exp = data.expense || {};
+		const table = catalystApp.datastore().table('Expenses');
+		await table.insertRow({
+			expense_id: String(exp.expense_id || ''),
+			expense_date: exp.date || date,
+			amount: Number(exp.amount || amount || 0),
+			merchant_name: String(exp.merchant_name || merchantName || ''),
+			category_name: String(exp.category_name || ''),
+			category_id: String(exp.category_id || categoryId || ''),
+			currency_code: String(exp.currency_code || 'INR'),
+			currency_id: String(exp.currency_id || currencyId || ''),
+			status: String(exp.status || 'unreported'),
+			description: String(exp.description || description || ''),
+			paid_through_account_name: String(exp.paid_through_account_name || 'Petty Cash'),
+			payment_mode: String(exp.payment_mode || 'Cash'),
+			reference_number: String(exp.reference_number || ''),
+			user_name: String(exp.user_name || ''),
+			user_email: String(exp.user_email || ''),
+			report_name: String(exp.report_name || ''),
+			report_id: String(exp.report_id || '')
+		});
+	} catch (dbErr) {
+		console.warn('Could not mirror expense into Catalyst Data Store Expenses table:', dbErr.message);
+	}
+
 	return {
 		ok: true,
 		expense: data.expense,
 		message: 'Expense created successfully'
 	};
+}
+
+/**
+ * Lists expenses persisted in the Catalyst Data Store 'Expenses' table
+ */
+async function listExpensesFromDataStore(catalystApp) {
+	try {
+		const query = 'SELECT ROWID, CREATEDTIME, expense_id, expense_date, amount, merchant_name, category_name, category_id, currency_code, currency_id, status, description, paid_through_account_name, payment_mode, reference_number, user_name, user_email, report_name, report_id FROM Expenses ORDER BY CREATEDTIME DESC';
+		const zcqlResult = await catalystApp.zcql().executeZCQLQuery(query);
+		const rows = (zcqlResult || []).map(r => r.Expenses || r);
+		return {
+			ok: true,
+			expenses: rows,
+			count: rows.length
+		};
+	} catch (err) {
+		console.warn('Failed to query Expenses from Catalyst Data Store:', err.message);
+		return {
+			ok: false,
+			error: err.message,
+			expenses: []
+		};
+	}
 }
 
 /**
@@ -316,6 +366,7 @@ module.exports = {
 	listExpenses,
 	getExpenseSummary,
 	createExpense,
-	listCategories
+	listCategories,
+	listExpensesFromDataStore
 };
 

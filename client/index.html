@@ -454,6 +454,10 @@
 			font-size: 0.8rem;
 			border-radius: 8px;
 		}
+		.btn-sm.btn-primary {
+			width: auto;
+			font-size: 0.8rem;
+		}
 		.btn-qty {
 			min-height: 44px;
 			min-width: 44px;
@@ -1950,6 +1954,159 @@
 				display: grid;
 			}
 		}
+
+		/* Dedicated Low-Stock Alerts & New SKU Views */
+		.alerts-card-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			gap: 16px;
+			margin-bottom: 20px;
+		}
+		.alert-sku-card {
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			padding: 16px 18px;
+			box-shadow: var(--shadow-sm);
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			position: relative;
+			overflow: hidden;
+		}
+		.alert-sku-card::before {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			width: 4px;
+			background: #f59e0b;
+		}
+		.alert-sku-card.critical::before {
+			background: var(--danger);
+		}
+		.alert-card-head {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 10px;
+		}
+		.alert-card-title {
+			margin: 4px 0 0;
+			font-size: 0.96rem;
+			font-weight: 700;
+			color: var(--ink);
+		}
+		.alert-card-supplier {
+			font-size: 0.78rem;
+			color: var(--muted);
+			word-break: break-all;
+		}
+		.alert-card-metrics {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 8px;
+			padding: 10px 12px;
+			border-radius: 10px;
+			background: var(--surface-subtle);
+			border: 1px solid var(--border);
+			font-size: 0.78rem;
+		}
+		.alert-metric-label {
+			color: var(--muted);
+			font-size: 0.68rem;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			font-weight: 700;
+		}
+		.alert-metric-val {
+			margin-top: 2px;
+			font-family: var(--mono);
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: var(--ink);
+		}
+		.alert-progress-track {
+			height: 7px;
+			border-radius: 999px;
+			background: var(--bg-accent);
+			overflow: hidden;
+		}
+		.alert-progress-fill {
+			height: 100%;
+			border-radius: 999px;
+			background: #f59e0b;
+		}
+		.alert-sku-card.critical .alert-progress-fill {
+			background: var(--danger);
+		}
+		.alert-card-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: auto;
+		}
+		.sku-preview-card {
+			background: linear-gradient(155deg, var(--sidebar-bg) 0%, var(--sidebar-surface) 100%);
+			border: 1px solid #263159;
+			border-radius: 14px;
+			padding: 20px;
+			color: var(--sidebar-ink);
+			display: grid;
+			gap: 14px;
+		}
+		.sku-preview-top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+		.sku-preview-code {
+			font-family: var(--mono);
+			font-size: 2rem;
+			font-weight: 700;
+			letter-spacing: 0.24em;
+			color: #fbbf24;
+		}
+		.sku-preview-bars {
+			height: 12px;
+			width: 150px;
+			opacity: 0.72;
+			background: repeating-linear-gradient(
+				90deg,
+				#e2e8f0 0 2px, transparent 2px 5px,
+				#e2e8f0 5px 6px, transparent 6px 9px,
+				#e2e8f0 9px 13px, transparent 13px 16px,
+				#e2e8f0 16px 18px, transparent 18px 22px
+			);
+		}
+		.sku-sim-metrics {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 10px;
+			padding-top: 12px;
+			border-top: 1px solid rgba(255, 255, 255, 0.12);
+		}
+		.sku-sim-k {
+			font-size: 0.68rem;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			color: var(--sidebar-muted);
+		}
+		.sku-sim-v {
+			margin-top: 2px;
+			font-family: var(--mono);
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: #ffffff;
+		}
+		.sku-free-list {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-top: 10px;
+		}
 	</style>
 </head>
 <body>
@@ -2084,14 +2241,14 @@
 			<hr class="sidebar-divider" />
 			<div class="sidebar-section-label">Operations</div>
 
-			<button type="button" class="sidebar-link" data-nav="alerts" data-action="alerts" title="Jump to Low-Stock Alerts">
+			<button type="button" class="sidebar-link" data-nav="alerts" data-view="alerts" title="Low-Stock Alert Queue">
 				<span class="sidebar-link-icon" aria-hidden="true">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
 				</span>
 				<span class="sidebar-link-label">Low-Stock Alerts</span>
 				<span id="sidebarLowCount" class="sidebar-badge" hidden>0</span>
 			</button>
-			<button type="button" class="sidebar-link" data-nav="add-sku" data-action="add-sku" title="Create New SKU in Catalog">
+			<button type="button" class="sidebar-link" data-nav="add-sku" data-view="add-sku" title="Register New SKU">
 				<span class="sidebar-link-icon" aria-hidden="true">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
 				</span>
@@ -2143,6 +2300,14 @@
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
 						<span>Products</span>
 					</button>
+					<button type="button" id="tabAlerts" class="module-tab" data-view="alerts">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+						<span>Alerts</span>
+					</button>
+					<button type="button" id="tabAddSku" class="module-tab" data-view="add-sku">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+						<span>Add SKU</span>
+					</button>
 				</nav>
 				<div class="status-bar">
 					<span id="connBadge" class="status-pill">Connecting</span>
@@ -2167,41 +2332,6 @@
 
 	<main id="appShell" class="shell" hidden>
 		<section id="scannerView">
-		<section class="kpi-strip" aria-label="Inventory summary">
-			<div class="kpi-card">
-				<div class="kpi-top">
-					<div class="kpi-label">Active SKUs</div>
-					<span class="kpi-icon info" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
-				</div>
-				<div id="kpiSkus" class="kpi-value">--</div>
-				<div class="kpi-sub">Tracked in Products table</div>
-			</div>
-			<div class="kpi-card">
-				<div class="kpi-top">
-					<div class="kpi-label">Units On Hand</div>
-					<span class="kpi-icon ok" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
-				</div>
-				<div id="kpiUnits" class="kpi-value">--</div>
-				<div class="kpi-sub">Total warehouse stock</div>
-			</div>
-			<div class="kpi-card">
-				<div class="kpi-top">
-					<div class="kpi-label">Low-Stock Alerts</div>
-					<span class="kpi-icon warn" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
-				</div>
-				<div id="kpiAlerts" class="kpi-value">--</div>
-				<div class="kpi-sub">At or below ReorderLevel</div>
-			</div>
-			<div class="kpi-card">
-				<div class="kpi-top">
-					<div class="kpi-label">Email Dispatch</div>
-					<span class="kpi-icon info" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
-				</div>
-				<div id="kpiMail" class="kpi-value" style="font-size:1.15rem;line-height:1.85;">--</div>
-				<div id="kpiMailSub" class="kpi-sub">Checking sender config</div>
-			</div>
-		</section>
-
 		<div class="workspace">
 			<section class="panel" aria-labelledby="scannerHeading">
 				<div class="panel-head">
@@ -2272,55 +2402,30 @@
 				</div>
 			</section>
 
-			<div class="right-stack">
-				<section class="panel" aria-labelledby="agentHeading">
-					<div class="panel-head">
-						<h2 id="agentHeading" class="panel-title">Replenishment Agent &amp; Email Draft</h2>
-						<span id="decisionTag" class="panel-meta">STANDBY</span>
-					</div>
-					<div id="agentOutput" class="panel-body">
-						<div class="empty-state">
-							<div class="empty-icon" aria-hidden="true">
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-									<rect x="2" y="4" width="20" height="16" rx="2" />
-									<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-								</svg>
-							</div>
-							<p>Scan a 3-digit SKU and log sold units. Whenever remaining stock reaches or drops below <code>ReorderLevel</code>, the agent calculates reorder quantity and drafts a supplier notice here.</p>
-							<button type="button" id="sampleFillBtn" class="btn btn-sm">Load Sample: SKU 401 &times; 5</button>
+			<section class="panel" aria-labelledby="agentHeading">
+				<div class="panel-head">
+					<h2 id="agentHeading" class="panel-title">Replenishment Agent &amp; Email Draft</h2>
+					<span id="decisionTag" class="panel-meta">STANDBY</span>
+				</div>
+				<div id="agentOutput" class="panel-body">
+					<div class="empty-state">
+						<div class="empty-icon" aria-hidden="true">
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="2" y="4" width="20" height="16" rx="2" />
+								<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+							</svg>
 						</div>
+						<p>Scan a 3-digit SKU and log sold units. Whenever remaining stock reaches or drops below <code>ReorderLevel</code>, the agent calculates reorder quantity and drafts a supplier notice here.</p>
+						<button type="button" id="sampleFillBtn" class="btn btn-sm">Load Sample: SKU 401 &times; 5</button>
 					</div>
-				</section>
-
-				<section class="panel" aria-labelledby="tableHeading">
-					<div class="panel-head">
-						<h2 id="tableHeading" class="panel-title">Live Inventory Table (Products)</h2>
-						<button id="refreshBtn" type="button" class="btn btn-sm">Refresh Data</button>
-					</div>
-					<div class="table-wrap">
-						<table>
-							<thead>
-								<tr>
-									<th>SKU</th>
-									<th>Product</th>
-									<th class="num">On Hand</th>
-									<th class="num">Reorder &le;</th>
-									<th>Status</th>
-									<th>Supplier</th>
-									<th class="num">Restock</th>
-								</tr>
-							</thead>
-							<tbody id="productsBody">
-								<tr><td colspan="7" style="color:var(--muted);">Loading live products from Catalyst Data Store...</td></tr>
-							</tbody>
-						</table>
-					</div>
-				</section>
-			</div>
+				</div>
+			</section>
 		</div>
 		</section>
 		<section id="dashboardView" hidden></section>
 		<section id="productsView" hidden></section>
+		<section id="alertsView" hidden></section>
+		<section id="addSkuView" hidden></section>
 	</main>
 
 	<nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Mobile navigation" hidden>
@@ -2336,7 +2441,7 @@
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
 			<span>Products</span>
 		</button>
-		<button type="button" class="mobile-nav-btn" data-nav="alerts" data-action="alerts">
+		<button type="button" class="mobile-nav-btn" data-nav="alerts" data-view="alerts">
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
 			<span id="mobileAlertBadge" class="mobile-nav-badge" hidden>0</span>
 			<span>Alerts</span>
@@ -2351,7 +2456,7 @@
 	<script src="/__catalyst/sdk/init.js"></script>
 	<script src="./auth-guard.js?v=20261112-5"></script>
 	<script src="./dashboard-analytics.js?v=20261112-4"></script>
-	<script src="./product-manager.js?v=20261112-4"></script>
+	<script src="./product-manager.js?v=20261112-5"></script>
 	<script>
 		const PROD_API_BASE = 'https://smartinventorysystem-60095756559.development.catalystserverless.in/server/smart_inventory/execute';
 		const LOCAL_API_BASE = 'http://localhost:3000/server/smart_inventory/execute';
@@ -2416,8 +2521,8 @@
 			mailBadge.textContent = liveMail ? 'Mail Sender Ready' : 'Mail Draft-Only';
 			mailBadge.className = liveMail ? 'status-pill ok' : 'status-pill warn';
 
-			kpiMail.textContent = liveMail ? 'Live + Draft' : 'Draft Ready';
-			kpiMailSub.textContent = liveMail ? 'Verified Catalyst Mail sender' : 'Set CATALYST_FROM_EMAIL to send';
+			if (kpiMail) kpiMail.textContent = liveMail ? 'Live + Draft' : 'Draft Ready';
+			if (kpiMailSub) kpiMailSub.textContent = liveMail ? 'Verified Catalyst Mail sender' : 'Set CATALYST_FROM_EMAIL to send';
 		}
 
 		function setCountBadge(el, count) {
@@ -2431,10 +2536,12 @@
 			const totalUnits = state.products.reduce((sum, p) => sum + Number(p.stockCount || 0), 0);
 			const lowCount = state.products.filter((p) => p.stockCount <= p.reorderLevel).length;
 
-			kpiSkus.textContent = String(totalSkus);
-			kpiUnits.textContent = String(totalUnits);
-			kpiAlerts.textContent = String(lowCount);
-			kpiAlerts.className = lowCount > 0 ? 'kpi-value warn' : 'kpi-value';
+			if (kpiSkus) kpiSkus.textContent = String(totalSkus);
+			if (kpiUnits) kpiUnits.textContent = String(totalUnits);
+			if (kpiAlerts) {
+				kpiAlerts.textContent = String(lowCount);
+				kpiAlerts.className = lowCount > 0 ? 'kpi-value warn' : 'kpi-value';
+			}
 			const tabAlertBadge = document.getElementById('tabAlertBadge');
 			if (tabAlertBadge) tabAlertBadge.textContent = lowCount > 0 ? String(lowCount) : '';
 
@@ -2488,33 +2595,36 @@
 		function renderProducts() {
 			updateKpis();
 
-			quickChips.innerHTML = state.products
-				.map((p) => `<button type="button" class="chip" data-sku="${escapeHtml(p.sku)}"><span class="mono">${escapeHtml(p.sku)}</span> &middot; ${escapeHtml(p.itemName)}</button>`)
-				.join('');
-
-			if (!state.products.length) {
-				productsBody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);">No products found in Data Store.</td></tr>';
-				return;
+			if (quickChips) {
+				quickChips.innerHTML = state.products
+					.map((p) => `<button type="button" class="chip" data-sku="${escapeHtml(p.sku)}"><span class="mono">${escapeHtml(p.sku)}</span> &middot; ${escapeHtml(p.itemName)}</button>`)
+					.join('');
 			}
 
-			productsBody.innerHTML = state.products.map((p) => {
-				const isLow = p.stockCount <= p.reorderLevel;
-				const barPct = Math.min(100, Math.max(4, Math.round((p.stockCount / Math.max(p.reorderLevel * 3, 25)) * 100)));
-				return `
-					<tr>
-						<td><span class="sku-pill mono">${escapeHtml(p.sku)}</span></td>
-						<td><strong>${escapeHtml(p.itemName)}</strong></td>
-						<td class="num">
-							<strong>${p.stockCount}</strong>
-							<div class="stock-meter ${isLow ? 'low' : ''}" aria-hidden="true"><span style="width:${barPct}%"></span></div>
-						</td>
-						<td class="num">${p.reorderLevel}</td>
-						<td><span class="badge-status ${isLow ? 'low' : 'ok'}">${isLow ? 'Low Stock' : 'Healthy'}</span></td>
-						<td style="color:var(--muted);">${escapeHtml(p.supplierEmail)}</td>
-						<td class="num"><button type="button" class="btn btn-sm restock-btn" data-sku="${escapeHtml(p.sku)}">+50</button></td>
-					</tr>
-				`;
-			}).join('');
+			if (productsBody) {
+				if (!state.products.length) {
+					productsBody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);">No products found in Data Store.</td></tr>';
+				} else {
+					productsBody.innerHTML = state.products.map((p) => {
+						const isLow = p.stockCount <= p.reorderLevel;
+						const barPct = Math.min(100, Math.max(4, Math.round((p.stockCount / Math.max(p.reorderLevel * 3, 25)) * 100)));
+						return `
+							<tr>
+								<td><span class="sku-pill mono">${escapeHtml(p.sku)}</span></td>
+								<td><strong>${escapeHtml(p.itemName)}</strong></td>
+								<td class="num">
+									<strong>${p.stockCount}</strong>
+									<div class="stock-meter ${isLow ? 'low' : ''}" aria-hidden="true"><span style="width:${barPct}%"></span></div>
+								</td>
+								<td class="num">${p.reorderLevel}</td>
+								<td><span class="badge-status ${isLow ? 'low' : 'ok'}">${isLow ? 'Low Stock' : 'Healthy'}</span></td>
+								<td style="color:var(--muted);">${escapeHtml(p.supplierEmail)}</td>
+								<td class="num"><button type="button" class="btn btn-sm restock-btn" data-sku="${escapeHtml(p.sku)}">+50</button></td>
+							</tr>
+						`;
+					}).join('');
+				}
+			}
 
 			updatePreview();
 		}
@@ -2579,7 +2689,9 @@
 			} catch (err) {
 				connBadge.textContent = 'Connection Error';
 				connBadge.className = 'status-pill warn';
-				productsBody.innerHTML = `<tr><td colspan="7" style="color:var(--danger-ink);font-weight:600;">${escapeHtml(err.message)}</td></tr>`;
+				if (productsBody) {
+					productsBody.innerHTML = `<tr><td colspan="7" style="color:var(--danger-ink);font-weight:600;">${escapeHtml(err.message)}</td></tr>`;
+				}
 			}
 		}
 
@@ -2622,10 +2734,12 @@
 			});
 		});
 
-		productsBody.addEventListener('click', (e) => {
-			const btn = e.target.closest('.restock-btn');
-			if (btn) restockSku(btn.dataset.sku);
-		});
+		if (productsBody) {
+			productsBody.addEventListener('click', (e) => {
+				const btn = e.target.closest('.restock-btn');
+				if (btn) restockSku(btn.dataset.sku);
+			});
+		}
 
 		const sampleFillBtn = document.getElementById('sampleFillBtn');
 		if (sampleFillBtn) {
@@ -2637,7 +2751,8 @@
 			});
 		}
 
-		document.getElementById('refreshBtn').addEventListener('click', fetchProducts);
+		const refreshBtn = document.getElementById('refreshBtn');
+		if (refreshBtn) refreshBtn.addEventListener('click', fetchProducts);
 
 		document.getElementById('scanForm').addEventListener('submit', async (e) => {
 			e.preventDefault();
@@ -2676,14 +2791,491 @@
 		const scannerView = document.getElementById('scannerView');
 		const dashboardView = document.getElementById('dashboardView');
 		const productsView = document.getElementById('productsView');
+		const alertsView = document.getElementById('alertsView');
+		const addSkuView = document.getElementById('addSkuView');
 		const tabScanner = document.getElementById('tabScanner');
 		const tabDashboard = document.getElementById('tabDashboard');
 		const tabProducts = document.getElementById('tabProducts');
+		const tabAlerts = document.getElementById('tabAlerts');
+		const tabAddSku = document.getElementById('tabAddSku');
+
+		const alertsState = { search: '', busySku: null, banner: null };
+		const addSkuState = { sku: '', itemName: '', stockCount: '30', reorderLevel: '10', supplierEmail: '', saving: false, banner: null };
+
+		function getSuggestedOrderQty(p) {
+			const targetPar = Math.max((Number(p.reorderLevel) || 0) * 2, (Number(p.reorderLevel) || 0) + 15);
+			return Math.max(0, targetPar - Number(p.stockCount || 0));
+		}
+
+		function findFreeSkuSuggestions(limit = 4) {
+			const taken = new Set(state.products.map((p) => String(p.sku)));
+			const suggestions = [];
+			for (let code = 401; code <= 999 && suggestions.length < limit; code++) {
+				const s = String(code);
+				if (!taken.has(s)) suggestions.push(s);
+			}
+			return suggestions;
+		}
+
+		function renderAlertsView() {
+			if (!alertsView) return;
+			const lowItems = state.products
+				.filter((p) => Number(p.stockCount) <= Number(p.reorderLevel))
+				.sort((a, b) => Number(a.stockCount) - Number(b.stockCount));
+			const q = alertsState.search.trim().toLowerCase();
+			const visibleItems = q
+				? lowItems.filter((p) => `${p.sku} ${p.itemName} ${p.supplierEmail}`.toLowerCase().includes(q))
+				: lowItems;
+
+			const criticalCount = lowItems.filter((p) => Number(p.stockCount) === 0).length;
+			const lowOnlyCount = lowItems.length - criticalCount;
+			const totalRecommended = lowItems.reduce((sum, p) => sum + getSuggestedOrderQty(p), 0);
+			const vendorMap = new Map();
+			lowItems.forEach((p) => {
+				const key = p.supplierEmail || 'Unassigned Supplier';
+				const entry = vendorMap.get(key) || { supplierEmail: key, count: 0, orderUnits: 0, skus: [] };
+				entry.count += 1;
+				entry.orderUnits += getSuggestedOrderQty(p);
+				entry.skus.push(p.sku);
+				vendorMap.set(key, entry);
+			});
+			const vendors = Array.from(vendorMap.values());
+
+			alertsView.innerHTML = `
+				<div class="page-head-card">
+					<div>
+						<div class="eyebrow">Replenishment Triage</div>
+						<h2 class="dash-heading">Low-Stock Alerts &amp; Reorder Dispatch</h2>
+						<p class="dash-subtitle">Priority SKUs at or below ReorderLevel ready for immediate warehouse restock or PO email dispatch.</p>
+					</div>
+					<div class="dash-controls">
+						<div class="search-wrap">
+							<span class="search-icon" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+							<input id="alertsSearchInput" type="search" class="input-control dash-search has-icon" placeholder="Filter urgent SKUs, supplier..." value="${escapeHtml(alertsState.search)}" />
+						</div>
+						<button type="button" id="alertsRefreshBtn" class="btn btn-sm">Refresh Alerts</button>
+					</div>
+				</div>
+
+				<section class="kpi-strip" aria-label="Low-stock alert metrics">
+					<div class="kpi-card">
+						<div class="kpi-top">
+							<div class="kpi-label">Out of Stock</div>
+							<span class="kpi-icon ${criticalCount > 0 ? 'danger' : 'ok'}" aria-hidden="true">!</span>
+						</div>
+						<div class="kpi-value ${criticalCount > 0 ? 'danger' : 'ok'}">${criticalCount}</div>
+						<div class="kpi-sub">Immediate stockout risk</div>
+					</div>
+					<div class="kpi-card">
+						<div class="kpi-top">
+							<div class="kpi-label">Below Reorder</div>
+							<span class="kpi-icon ${lowOnlyCount > 0 ? 'warn' : 'ok'}" aria-hidden="true">&le;</span>
+						</div>
+						<div class="kpi-value ${lowOnlyCount > 0 ? 'warn' : ''}">${lowItems.length}</div>
+						<div class="kpi-sub">Total flagged SKUs</div>
+					</div>
+					<div class="kpi-card">
+						<div class="kpi-top">
+							<div class="kpi-label">Recommended Order</div>
+							<span class="kpi-icon info" aria-hidden="true">+</span>
+						</div>
+						<div class="kpi-value">${totalRecommended}</div>
+						<div class="kpi-sub">Units needed to reach target par</div>
+					</div>
+					<div class="kpi-card">
+						<div class="kpi-top">
+							<div class="kpi-label">Suppliers Affected</div>
+							<span class="kpi-icon info" aria-hidden="true">@</span>
+						</div>
+						<div class="kpi-value">${vendors.length}</div>
+						<div class="kpi-sub">${state.capabilities?.liveMailConfigured ? 'Catalyst Mail ready' : 'Draft mode ready'}</div>
+					</div>
+				</section>
+
+				${alertsState.banner ? `<div class="banner ${escapeHtml(alertsState.banner.type)}" style="display:block;margin-bottom:16px;">${escapeHtml(alertsState.banner.message)}</div>` : ''}
+
+				${
+					visibleItems.length
+						? `
+						<div class="alerts-card-grid">
+							${visibleItems
+								.map((p) => {
+									const isCritical = Number(p.stockCount) === 0;
+									const pct = Math.min(100, Math.round((Number(p.stockCount) / Math.max(1, Number(p.reorderLevel) * 2)) * 100));
+									const recQty = getSuggestedOrderQty(p);
+									const isBusy = alertsState.busySku === p.sku;
+									return `
+									<article class="alert-sku-card ${isCritical ? 'critical' : ''}">
+										<div class="alert-card-head">
+											<div>
+												<span class="sku-pill mono">SKU ${escapeHtml(p.sku)}</span>
+												<h3 class="alert-card-title">${escapeHtml(p.itemName)}</h3>
+											</div>
+											<span class="badge-status ${isCritical ? 'danger' : 'low'}">${isCritical ? 'Out of Stock' : 'Low Stock'}</span>
+										</div>
+										<div class="alert-card-supplier">Supplier: ${escapeHtml(p.supplierEmail)}</div>
+										<div class="alert-card-metrics">
+											<div>
+												<div class="alert-metric-label">On Hand</div>
+												<div class="alert-metric-val">${p.stockCount}</div>
+											</div>
+											<div>
+												<div class="alert-metric-label">Reorder &le;</div>
+												<div class="alert-metric-val">${p.reorderLevel}</div>
+											</div>
+											<div>
+												<div class="alert-metric-label">Suggested</div>
+												<div class="alert-metric-val" style="color:var(--primary);">+${recQty}</div>
+											</div>
+										</div>
+										<div class="alert-progress-track"><div class="alert-progress-fill" style="width:${pct}%;"></div></div>
+										<div class="alert-card-actions">
+											<button type="button" class="btn btn-sm btn-primary alert-restock-btn" data-sku="${escapeHtml(p.sku)}" data-qty="25" ${isBusy ? 'disabled' : ''}>${isBusy ? 'Updating...' : 'Restock +25'}</button>
+											<button type="button" class="btn btn-sm alert-restock-btn" data-sku="${escapeHtml(p.sku)}" data-qty="50" ${isBusy ? 'disabled' : ''}>Restock +50</button>
+											<button type="button" class="btn btn-sm alert-scan-btn" data-sku="${escapeHtml(p.sku)}">Open in Scanner</button>
+										</div>
+									</article>
+								`;
+								})
+								.join('')}
+						</div>
+						`
+						: `
+						<section class="panel" style="margin-bottom:20px;">
+							<div class="panel-body">
+								<div class="watch-clear">
+									<div style="font-weight:700;">No SKUs require urgent replenishment right now.</div>
+									<div>${lowItems.length ? 'No flagged SKUs match your search filter.' : 'All tracked catalog SKUs sit comfortably above their ReorderLevel.'}</div>
+								</div>
+							</div>
+						</section>
+						`
+				}
+
+				<section class="panel" aria-labelledby="alertsVendorHeading">
+					<div class="panel-head">
+						<h3 id="alertsVendorHeading" class="panel-title">Vendor Dispatch Rollup</h3>
+						<span class="panel-meta">${vendors.length} SUPPLIERS</span>
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Supplier Email</th>
+									<th>Flagged SKUs</th>
+									<th class="num">Alert Count</th>
+									<th class="num">Total Units Needed</th>
+								</tr>
+							</thead>
+							<tbody>
+								${
+									vendors.length
+										? vendors
+												.map(
+													(v) => `
+												<tr>
+													<td><strong>${escapeHtml(v.supplierEmail)}</strong></td>
+													<td class="mono">${v.skus.map((s) => escapeHtml(s)).join(', ')}</td>
+													<td class="num mono">${v.count}</td>
+													<td class="num mono"><strong>+${v.orderUnits}</strong></td>
+												</tr>
+											`
+												)
+												.join('')
+										: '<tr><td colspan="4" style="color:var(--muted);">No vendor dispatches pending.</td></tr>'
+								}
+							</tbody>
+						</table>
+					</div>
+				</section>
+			`;
+
+			const searchEl = alertsView.querySelector('#alertsSearchInput');
+			if (searchEl) {
+				searchEl.addEventListener('input', (e) => {
+					const pos = e.target.selectionStart;
+					alertsState.search = e.target.value;
+					renderAlertsView();
+					const nextEl = alertsView.querySelector('#alertsSearchInput');
+					if (nextEl) {
+						nextEl.focus();
+						if (typeof pos === 'number') nextEl.setSelectionRange(pos, pos);
+					}
+				});
+			}
+
+			const refreshBtn = alertsView.querySelector('#alertsRefreshBtn');
+			if (refreshBtn) {
+				refreshBtn.addEventListener('click', async () => {
+					alertsState.banner = null;
+					await fetchProducts();
+					renderAlertsView();
+				});
+			}
+
+			alertsView.querySelectorAll('.alert-restock-btn').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const sku = btn.dataset.sku;
+					const qty = Number(btn.dataset.qty || 25);
+					alertsState.busySku = sku;
+					alertsState.banner = null;
+					renderAlertsView();
+					try {
+						const res = await apiFetch(`${API_BASE}/restock`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ sku, restockQty: qty })
+						});
+						const data = await res.json();
+						if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to restock SKU');
+						handleProductsSync(data.products || []);
+						alertsState.banner = { type: 'success', message: `Added +${qty} units to SKU ${sku}.` };
+					} catch (err) {
+						alertsState.banner = { type: 'error', message: err.message };
+					} finally {
+						alertsState.busySku = null;
+						renderAlertsView();
+					}
+				});
+			});
+
+			alertsView.querySelectorAll('.alert-scan-btn').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const sku = btn.dataset.sku;
+					setActiveView('scanner');
+					skuInput.value = sku;
+					updatePreview();
+					qtyInput.focus();
+				});
+			});
+		}
+
+		function updateAddSkuPreviewPanel() {
+			if (!addSkuView) return;
+			const previewBox = addSkuView.querySelector('#addSkuLivePreview');
+			if (!previewBox) return;
+
+			const cleanSku = addSkuState.sku.trim();
+			const existing = cleanSku ? state.products.find((p) => p.sku === cleanSku) : null;
+			const stock = Math.max(0, Number(addSkuState.stockCount || 0));
+			const reorder = Math.max(0, Number(addSkuState.reorderLevel || 0));
+			const targetPar = Math.max(reorder * 2, reorder + 15);
+			const isLow = stock <= reorder;
+			const statusLabel = existing
+				? 'SKU Already Exists'
+				: !cleanSku
+					? 'Awaiting 3-Digit SKU'
+					: isLow
+						? 'Triggers Immediate Alert'
+						: 'Healthy Starting Buffer';
+			const statusClass = existing ? 'danger' : !cleanSku ? 'info' : isLow ? 'low' : 'ok';
+
+			previewBox.innerHTML = `
+				<div class="sku-preview-card">
+					<div class="sku-preview-top">
+						<span class="sku-preview-code">${escapeHtml(cleanSku || '---')}</span>
+						<span class="badge-status ${statusClass}">${statusLabel}</span>
+					</div>
+					<div>
+						<div style="font-size:1.05rem;font-weight:700;color:#ffffff;">${escapeHtml(addSkuState.itemName.trim() || 'New Product Title')}</div>
+						<div style="font-size:0.8rem;color:var(--sidebar-muted);margin-top:3px;">Vendor: ${escapeHtml(addSkuState.supplierEmail.trim() || 'orders@supplier.example.com')}</div>
+					</div>
+					<div class="sku-preview-bars" aria-hidden="true"></div>
+					<div class="sku-sim-metrics">
+						<div>
+							<div class="sku-sim-k">Initial Stock</div>
+							<div class="sku-sim-v">${stock}</div>
+						</div>
+						<div>
+							<div class="sku-sim-k">Reorder &le;</div>
+							<div class="sku-sim-v">${reorder}</div>
+						</div>
+						<div>
+							<div class="sku-sim-k">Target Par</div>
+							<div class="sku-sim-v">${targetPar}</div>
+						</div>
+					</div>
+				</div>
+			`;
+		}
+
+		function renderAddSkuView() {
+			if (!addSkuView) return;
+			const freeCodes = findFreeSkuSuggestions(5);
+
+			addSkuView.innerHTML = `
+				<div class="page-head-card">
+					<div>
+						<div class="eyebrow">Catalog Onboarding</div>
+						<h2 class="dash-heading">Register New Product SKU</h2>
+						<p class="dash-subtitle">Assign a unique 3-digit SKU code, simulate its reorder safety policy, and publish directly to Catalyst Data Store.</p>
+					</div>
+					<div class="dash-controls">
+						<button type="button" id="addSkuViewCatalogBtn" class="btn btn-sm">View Full Catalog (${state.products.length})</button>
+					</div>
+				</div>
+
+				<div class="workspace">
+					<section class="panel" aria-labelledby="addSkuFormHeading">
+						<div class="panel-head">
+							<h3 id="addSkuFormHeading" class="panel-title">New SKU Specification</h3>
+							<span class="panel-meta">NEW RECORD</span>
+						</div>
+						<div class="panel-body">
+							<form id="addSkuStandaloneForm">
+								<div class="field-label">
+									<label for="newSkuCodeInput">SKU Code</label>
+									<span class="field-hint">3 unique digits</span>
+								</div>
+								<input id="newSkuCodeInput" class="input-control mono" type="text" inputmode="numeric" maxlength="3" placeholder="e.g. ${escapeHtml(freeCodes[0] || '409')}" value="${escapeHtml(addSkuState.sku)}" required />
+
+								<div class="field-label" style="margin-top:14px;">
+									<label for="newSkuNameInput">Product Name</label>
+									<span class="field-hint">Max 255 chars</span>
+								</div>
+								<input id="newSkuNameInput" class="input-control" type="text" maxlength="255" placeholder="e.g. Noise-Canceling Warehouse Headset" value="${escapeHtml(addSkuState.itemName)}" required />
+
+								<div class="pm-two-col">
+									<div>
+										<div class="field-label" style="margin-top:14px;">
+											<label for="newSkuStockInput">Initial Stock</label>
+										</div>
+										<input id="newSkuStockInput" class="input-control" type="number" min="0" step="1" value="${escapeHtml(addSkuState.stockCount)}" required />
+									</div>
+									<div>
+										<div class="field-label" style="margin-top:14px;">
+											<label for="newSkuReorderInput">Reorder Level (&le;)</label>
+										</div>
+										<input id="newSkuReorderInput" class="input-control" type="number" min="0" step="1" value="${escapeHtml(addSkuState.reorderLevel)}" required />
+									</div>
+								</div>
+
+								<div class="field-label" style="margin-top:14px;">
+									<label for="newSkuEmailInput">Supplier Email</label>
+									<span class="field-hint">Replenishment contact</span>
+								</div>
+								<input id="newSkuEmailInput" class="input-control" type="email" maxlength="255" placeholder="orders@supplier.example.com" value="${escapeHtml(addSkuState.supplierEmail)}" required />
+
+								<div class="pm-form-actions">
+									<button id="addSkuSubmitBtn" type="submit" class="btn btn-primary" ${addSkuState.saving ? 'disabled' : ''}>${addSkuState.saving ? 'Creating SKU...' : 'Create SKU in Data Store'}</button>
+									<button id="addSkuResetBtn" type="button" class="btn">Clear</button>
+								</div>
+								${addSkuState.banner ? `<div class="banner ${escapeHtml(addSkuState.banner.type)}" style="display:block;">${escapeHtml(addSkuState.banner.message)}</div>` : ''}
+							</form>
+						</div>
+					</section>
+
+					<div class="right-stack">
+						<section class="panel" aria-labelledby="addSkuPreviewHeading">
+							<div class="panel-head">
+								<h3 id="addSkuPreviewHeading" class="panel-title">Live Barcode &amp; Policy Simulation</h3>
+								<span class="panel-meta">LIVE PREVIEW</span>
+							</div>
+							<div class="panel-body">
+								<div id="addSkuLivePreview"></div>
+								<div style="margin-top:16px;">
+									<div class="field-label">
+										<span>Suggested Available 3-Digit Codes</span>
+										<span class="field-hint">Click to fill</span>
+									</div>
+									<div class="sku-free-list">
+										${freeCodes.map((code) => `<button type="button" class="chip add-sku-suggest" data-code="${escapeHtml(code)}">${escapeHtml(code)}</button>`).join('')}
+									</div>
+								</div>
+							</div>
+						</section>
+					</div>
+				</div>
+			`;
+
+			updateAddSkuPreviewPanel();
+
+			const skuEl = addSkuView.querySelector('#newSkuCodeInput');
+			const nameEl = addSkuView.querySelector('#newSkuNameInput');
+			const stockEl = addSkuView.querySelector('#newSkuStockInput');
+			const reorderEl = addSkuView.querySelector('#newSkuReorderInput');
+			const emailEl = addSkuView.querySelector('#newSkuEmailInput');
+
+			if (skuEl) {
+				skuEl.addEventListener('input', () => {
+					skuEl.value = skuEl.value.replace(/\D/g, '').slice(0, 3);
+					addSkuState.sku = skuEl.value;
+					updateAddSkuPreviewPanel();
+				});
+			}
+			if (nameEl) nameEl.addEventListener('input', () => { addSkuState.itemName = nameEl.value; updateAddSkuPreviewPanel(); });
+			if (stockEl) stockEl.addEventListener('input', () => { addSkuState.stockCount = stockEl.value; updateAddSkuPreviewPanel(); });
+			if (reorderEl) reorderEl.addEventListener('input', () => { addSkuState.reorderLevel = reorderEl.value; updateAddSkuPreviewPanel(); });
+			if (emailEl) emailEl.addEventListener('input', () => { addSkuState.supplierEmail = emailEl.value; updateAddSkuPreviewPanel(); });
+
+			addSkuView.querySelectorAll('.add-sku-suggest').forEach((chip) => {
+				chip.addEventListener('click', () => {
+					addSkuState.sku = chip.dataset.code || '';
+					if (skuEl) skuEl.value = addSkuState.sku;
+					updateAddSkuPreviewPanel();
+				});
+			});
+
+			const goCatalog = addSkuView.querySelector('#addSkuViewCatalogBtn');
+			if (goCatalog) goCatalog.addEventListener('click', () => setActiveView('products'));
+
+			const resetBtn = addSkuView.querySelector('#addSkuResetBtn');
+			if (resetBtn) {
+				resetBtn.addEventListener('click', () => {
+					Object.assign(addSkuState, { sku: '', itemName: '', stockCount: '30', reorderLevel: '10', supplierEmail: '', banner: null });
+					renderAddSkuView();
+				});
+			}
+
+			const formEl = addSkuView.querySelector('#addSkuStandaloneForm');
+			if (formEl) {
+				formEl.addEventListener('submit', async (e) => {
+					e.preventDefault();
+					addSkuState.banner = null;
+					addSkuState.saving = true;
+					renderAddSkuView();
+					try {
+						const res = await apiFetch(`${API_BASE}/products`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								sku: addSkuState.sku.trim(),
+								itemName: addSkuState.itemName.trim(),
+								stockCount: Number(addSkuState.stockCount),
+								reorderLevel: Number(addSkuState.reorderLevel),
+								supplierEmail: addSkuState.supplierEmail.trim()
+							})
+						});
+						const data = await res.json();
+						if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to create SKU');
+						handleProductsSync(data.products || []);
+						Object.assign(addSkuState, {
+							sku: '',
+							itemName: '',
+							stockCount: '30',
+							reorderLevel: '10',
+							supplierEmail: '',
+							banner: {
+								type: 'success',
+								message: `Created SKU ${data.created.sku} (${data.created.itemName}) with ${data.created.stockCount} units.`
+							}
+						});
+					} catch (err) {
+						addSkuState.banner = { type: 'error', message: err.message };
+					} finally {
+						addSkuState.saving = false;
+						renderAddSkuView();
+					}
+				});
+			}
+		}
 
 		const handleProductsSync = (products) => {
 			state.products = products;
 			renderProducts();
 			if (productManagerModule) productManagerModule.setProducts(products);
+			if (alertsView && !alertsView.hidden) renderAlertsView();
+			if (addSkuView && !addSkuView.hidden) updateAddSkuPreviewPanel();
 		};
 
 		const dashboardModule = window.StockDashboardModule.create({
@@ -2707,6 +3299,7 @@
 			fetcher: apiFetch,
 			onCapabilities: updateCapabilityBadges,
 			onProductsSync: handleProductsSync,
+			onRequestAddSku: () => setActiveView('add-sku'),
 			onSelectSkuForScan: (sku) => {
 				setActiveView('scanner');
 				skuInput.value = sku;
@@ -2726,7 +3319,15 @@
 			},
 			products: {
 				title: 'Product Catalog',
-				sub: 'SKU Master Registry, Stock Levels & Supplier Directory'
+				sub: 'Full SKU Directory, Threshold Status & Inline Editor'
+			},
+			alerts: {
+				title: 'Low-Stock Alerts',
+				sub: 'Urgent Reorder Queue, Deficit Triage & Vendor Rollup'
+			},
+			'add-sku': {
+				title: 'Add New SKU',
+				sub: 'Register New 3-Digit Product SKUs with Live Threshold Simulation'
 			}
 		};
 
@@ -2780,14 +3381,19 @@
 		}
 
 		function setActiveView(view, navOverride) {
-			const normalized = view === 'dashboard' || view === 'products' ? view : 'scanner';
+			const validViews = new Set(['scanner', 'dashboard', 'products', 'alerts', 'add-sku']);
+			const normalized = validViews.has(view) ? view : 'scanner';
 			scannerView.hidden = normalized !== 'scanner';
 			dashboardView.hidden = normalized !== 'dashboard';
 			productsView.hidden = normalized !== 'products';
+			if (alertsView) alertsView.hidden = normalized !== 'alerts';
+			if (addSkuView) addSkuView.hidden = normalized !== 'add-sku';
 
 			tabScanner.classList.toggle('active', normalized === 'scanner');
 			tabDashboard.classList.toggle('active', normalized === 'dashboard');
 			tabProducts.classList.toggle('active', normalized === 'products');
+			if (tabAlerts) tabAlerts.classList.toggle('active', normalized === 'alerts');
+			if (tabAddSku) tabAddSku.classList.toggle('active', normalized === 'add-sku');
 			syncNavHighlight(navOverride || normalized);
 
 			const meta = VIEW_META[normalized] || VIEW_META.scanner;
@@ -2804,28 +3410,19 @@
 			} else if (normalized === 'products') {
 				productManagerModule.setProducts(state.products);
 				return productManagerModule.load(true);
+			} else if (normalized === 'alerts') {
+				renderAlertsView();
+				return fetchProducts().then(() => renderAlertsView());
+			} else if (normalized === 'add-sku') {
+				renderAddSkuView();
+				const codeEl = addSkuView.querySelector('#newSkuCodeInput');
+				if (codeEl) codeEl.focus();
+				return Promise.resolve();
 			}
 			return Promise.resolve();
 		}
 
 		async function triggerQuickAction(action) {
-			if (action === 'alerts') {
-				await setActiveView('dashboard', 'alerts');
-				const reorderBtn = dashboardView.querySelector('[data-filter="reorder"]');
-				if (reorderBtn) {
-					reorderBtn.click();
-				}
-				return;
-			}
-			if (action === 'add-sku') {
-				await setActiveView('products', 'add-sku');
-				const pmSkuInput = productsView.querySelector('#pmSkuInput');
-				if (pmSkuInput) {
-					pmSkuInput.focus();
-					pmSkuInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				}
-				return;
-			}
 			if (action === 'sync') {
 				await fetchProducts();
 				if (currentActiveNav === 'dashboard' || !dashboardView.hidden) {
@@ -2833,6 +3430,10 @@
 				} else if (currentActiveNav === 'products' || !productsView.hidden) {
 					productManagerModule.setProducts(state.products);
 					await productManagerModule.load(false);
+				} else if (currentActiveNav === 'alerts' || (alertsView && !alertsView.hidden)) {
+					renderAlertsView();
+				} else if (currentActiveNav === 'add-sku' || (addSkuView && !addSkuView.hidden)) {
+					renderAddSkuView();
 				}
 				showBanner('success', 'Synced live SKU inventory from Zoho Catalyst Data Store.');
 			}
@@ -2870,7 +3471,7 @@
 		if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', () => setDrawerOpen(false));
 		if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', () => setDrawerOpen(false));
 		if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => setDrawerOpen(true));
-		if (topbarAlertBtn) topbarAlertBtn.addEventListener('click', () => triggerQuickAction('alerts'));
+		if (topbarAlertBtn) topbarAlertBtn.addEventListener('click', () => setActiveView('alerts'));
 		window.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) {
 				setDrawerOpen(false);
@@ -2885,10 +3486,14 @@
 		tabScanner.addEventListener('click', () => setActiveView('scanner'));
 		tabDashboard.addEventListener('click', () => setActiveView('dashboard'));
 		tabProducts.addEventListener('click', () => setActiveView('products'));
+		if (tabAlerts) tabAlerts.addEventListener('click', () => setActiveView('alerts'));
+		if (tabAddSku) tabAddSku.addEventListener('click', () => setActiveView('add-sku'));
 		window.addEventListener('hashchange', () => {
 			if (!state.currentUser) return;
 			if (location.hash === '#dashboard') setActiveView('dashboard');
 			else if (location.hash === '#products') setActiveView('products');
+			else if (location.hash === '#alerts') setActiveView('alerts');
+			else if (location.hash === '#add-sku') setActiveView('add-sku');
 			else if (location.hash === '#scanner') setActiveView('scanner');
 		});
 
@@ -2966,10 +3571,16 @@
 				setActiveView('dashboard');
 			} else if (location.hash === '#products' || location.pathname.endsWith('/products')) {
 				setActiveView('products');
+			} else if (location.hash === '#alerts') {
+				setActiveView('alerts');
+			} else if (location.hash === '#add-sku') {
+				setActiveView('add-sku');
 			}
 
 			fetchProducts().then(() => {
 				productManagerModule.setProducts(state.products);
+				if (alertsView && !alertsView.hidden) renderAlertsView();
+				if (addSkuView && !addSkuView.hidden) renderAddSkuView();
 			});
 		}
 

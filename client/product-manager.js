@@ -25,10 +25,12 @@
 		const onProductsSync = options.onProductsSync;
 		const onCapabilities = options.onCapabilities;
 		const onSelectSkuForScan = options.onSelectSkuForScan;
+		const onRequestAddSku = options.onRequestAddSku;
 
 		const state = {
 			products: [],
 			search: '',
+			statusFilter: 'all',
 			editingSku: null,
 			confirmDeleteSku: null,
 			loading: false,
@@ -218,10 +220,12 @@
 
 		function getFilteredProducts() {
 			const q = state.search.trim().toLowerCase();
-			if (!q) return state.products;
-			return state.products.filter((p) =>
-				`${p.sku} ${p.itemName} ${p.supplierEmail}`.toLowerCase().includes(q)
-			);
+			return state.products.filter((p) => {
+				if (state.statusFilter === 'low' && p.stockCount > p.reorderLevel) return false;
+				if (state.statusFilter === 'healthy' && p.stockCount <= p.reorderLevel) return false;
+				if (!q) return true;
+				return `${p.sku} ${p.itemName} ${p.supplierEmail}`.toLowerCase().includes(q);
+			});
 		}
 
 		function updateThresholdHint() {
@@ -242,14 +246,15 @@
 			const filtered = getFilteredProducts();
 			const totalUnits = state.products.reduce((sum, p) => sum + Number(p.stockCount || 0), 0);
 			const lowCount = state.products.filter((p) => p.stockCount <= p.reorderLevel).length;
+			const healthyCount = state.products.length - lowCount;
 			const vendorCount = new Set(state.products.map((p) => p.supplierEmail).filter(Boolean)).size;
 
 			container.innerHTML = `
 				<div class="page-head-card">
 					<div>
 						<div class="eyebrow">Catalog Operations</div>
-						<h2 class="dash-heading">Product Catalog &amp; SKU Manager</h2>
-						<p class="dash-subtitle">Create new 3-digit SKUs, tune reorder thresholds, and manage vendor contacts synced with Catalyst Data Store.</p>
+						<h2 class="dash-heading">Product Catalog &amp; SKU Directory</h2>
+						<p class="dash-subtitle">Browse, filter, edit, or audit active 3-digit SKUs synced with Catalyst Data Store.</p>
 					</div>
 					<div class="dash-controls">
 						<div class="search-wrap">
@@ -266,6 +271,7 @@
 							${ICONS.refresh}
 							<span>${state.loading ? 'Syncing...' : 'Refresh'}</span>
 						</button>
+						<button type="button" id="pmGoAddSkuBtn" class="btn btn-sm btn-primary">+ Add New SKU</button>
 					</div>
 				</div>
 
@@ -304,177 +310,128 @@
 					</div>
 				</section>
 
-				<div class="workspace">
-					<section class="panel" aria-labelledby="pmFormHeading">
-						<div class="panel-head">
-							<h3 id="pmFormHeading" class="panel-title">
-								${isEditing ? `Edit SKU ${escapeHtml(state.editingSku)}` : 'Add New Product SKU'}
-							</h3>
-							<span class="panel-meta">${isEditing ? 'EDIT MODE' : 'NEW RECORD'}</span>
-						</div>
-						<div class="panel-body">
-							<form id="pmForm">
-								<div class="field-label">
-									<label for="pmSkuInput">SKU Code</label>
-									<span class="field-hint">3 numeric digits</span>
-								</div>
-								<input
-									id="pmSkuInput"
-									class="input-control mono"
-									type="text"
-									inputmode="numeric"
-									maxlength="3"
-									placeholder="e.g. 601"
-									value="${escapeHtml(state.draft.sku)}"
-									required
-								/>
+				${
+					state.banner
+						? `<div class="banner ${escapeHtml(state.banner.type)}" style="display:block;margin-bottom:16px;">${escapeHtml(state.banner.message)}</div>`
+						: ''
+				}
 
-								<div class="field-label" style="margin-top:14px;">
-									<label for="pmNameInput">Product Name</label>
-									<span class="field-hint">Max 255 chars</span>
-								</div>
-								<input
-									id="pmNameInput"
-									class="input-control"
-									type="text"
-									maxlength="255"
-									placeholder="e.g. Noise-Canceling Headset"
-									value="${escapeHtml(state.draft.itemName)}"
-									required
-								/>
-
-								<div class="pm-two-col">
-									<div>
-										<div class="field-label" style="margin-top:14px;">
-											<label for="pmStockInput">Stock On Hand</label>
+				${
+					isEditing
+						? `
+						<section class="panel" style="margin-bottom:20px;" aria-labelledby="pmFormHeading">
+							<div class="panel-head">
+								<h3 id="pmFormHeading" class="panel-title">Edit SKU ${escapeHtml(state.editingSku)}</h3>
+								<span class="panel-meta">EDIT MODE</span>
+							</div>
+							<div class="panel-body">
+								<form id="pmForm">
+									<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;">
+										<div>
+											<div class="field-label"><label for="pmSkuInput">SKU Code</label></div>
+											<input id="pmSkuInput" class="input-control mono" type="text" inputmode="numeric" maxlength="3" value="${escapeHtml(state.draft.sku)}" required />
 										</div>
-										<input
-											id="pmStockInput"
-											class="input-control"
-											type="number"
-											min="0"
-											step="1"
-											value="${escapeHtml(state.draft.stockCount)}"
-											required
-										/>
-									</div>
-									<div>
-										<div class="field-label" style="margin-top:14px;">
-											<label for="pmReorderInput">Reorder Level (&le;)</label>
+										<div>
+											<div class="field-label"><label for="pmNameInput">Product Name</label></div>
+											<input id="pmNameInput" class="input-control" type="text" maxlength="255" value="${escapeHtml(state.draft.itemName)}" required />
 										</div>
-										<input
-											id="pmReorderInput"
-											class="input-control"
-											type="number"
-											min="0"
-											step="1"
-											value="${escapeHtml(state.draft.reorderLevel)}"
-											required
-										/>
+										<div>
+											<div class="field-label"><label for="pmStockInput">Stock On Hand</label></div>
+											<input id="pmStockInput" class="input-control" type="number" min="0" step="1" value="${escapeHtml(state.draft.stockCount)}" required />
+										</div>
+										<div>
+											<div class="field-label"><label for="pmReorderInput">Reorder Level (&le;)</label></div>
+											<input id="pmReorderInput" class="input-control" type="number" min="0" step="1" value="${escapeHtml(state.draft.reorderLevel)}" required />
+										</div>
+										<div>
+											<div class="field-label"><label for="pmEmailInput">Supplier Email</label></div>
+											<input id="pmEmailInput" class="input-control" type="email" maxlength="255" value="${escapeHtml(state.draft.supplierEmail)}" required />
+										</div>
 									</div>
-								</div>
+									<div id="pmThresholdHint" style="margin-top:10px;"></div>
+									<div class="pm-form-actions">
+										<button id="pmSaveBtn" type="submit" class="btn btn-primary" ${state.saving ? 'disabled' : ''}>
+											${state.saving ? 'Saving...' : 'Save SKU Changes'}
+										</button>
+										<button id="pmCancelEditBtn" type="button" class="btn">Cancel</button>
+									</div>
+								</form>
+							</div>
+						</section>
+						`
+						: ''
+				}
 
-								<div id="pmThresholdHint" style="margin-top:10px;"></div>
-
-								<div class="field-label" style="margin-top:14px;">
-									<label for="pmEmailInput">Supplier Email</label>
-									<span class="field-hint">Restock notice recipient</span>
-								</div>
-								<input
-									id="pmEmailInput"
-									class="input-control"
-									type="email"
-									maxlength="255"
-									placeholder="orders@supplier.example.com"
-									value="${escapeHtml(state.draft.supplierEmail)}"
-									required
-								/>
-
-								<div class="pm-form-actions">
-									<button id="pmSaveBtn" type="submit" class="btn btn-primary" ${state.saving ? 'disabled' : ''}>
-										${state.saving ? 'Saving...' : isEditing ? 'Save SKU Changes' : 'Add Product to Catalog'}
-									</button>
-									${
-										isEditing
-											? '<button id="pmCancelEditBtn" type="button" class="btn">Cancel</button>'
-											: ''
-									}
-								</div>
-
-								${
-									state.banner
-										? `<div class="banner ${escapeHtml(state.banner.type)}" style="display:block;">${escapeHtml(state.banner.message)}</div>`
-										: ''
-								}
-							</form>
-						</div>
-					</section>
-
-					<section class="panel" aria-labelledby="pmCatalogHeading">
-						<div class="panel-head">
+				<section class="panel" aria-labelledby="pmCatalogHeading">
+					<div class="panel-head dash-matrix-head">
+						<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
 							<h3 id="pmCatalogHeading" class="panel-title">Managed SKU Catalog</h3>
 							<span class="panel-meta">${filtered.length} OF ${state.products.length} SKUs</span>
 						</div>
-						<div class="table-wrap">
-							<table>
-								<thead>
-									<tr>
-										<th>SKU</th>
-										<th>Product</th>
-										<th class="num">On Hand</th>
-										<th class="num">Reorder &le;</th>
-										<th>Supplier</th>
-										<th class="num">Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									${
-										filtered.length
-											? filtered
-													.map((item) => {
-														const isConfirming = state.confirmDeleteSku === item.sku;
-														const isLow = item.stockCount <= item.reorderLevel;
-														return `
-														<tr class="${state.editingSku === item.sku ? 'pm-row-editing' : ''}">
-															<td><span class="sku-pill mono">${escapeHtml(item.sku)}</span></td>
-															<td>
-																<strong>${escapeHtml(item.itemName)}</strong>
-																<div style="margin-top:2px;">
-																	<span class="badge-status ${isLow ? 'low' : 'ok'}" style="font-size:0.7rem;padding:2px 7px;">
-																		${isLow ? 'Low Stock' : 'Healthy'}
-																	</span>
-																</div>
-															</td>
-															<td class="num mono"><strong>${item.stockCount}</strong></td>
-															<td class="num mono">${item.reorderLevel}</td>
-															<td style="color:var(--muted);font-size:0.81rem;">${escapeHtml(item.supplierEmail)}</td>
-															<td class="num">
-																<div class="dash-row-actions">
-																	${
-																		isConfirming
-																			? `
-																				<button type="button" class="btn btn-sm pm-btn-danger pm-confirm-del" data-sku="${escapeHtml(item.sku)}" ${state.saving ? 'disabled' : ''}>Confirm Delete</button>
-																				<button type="button" class="btn btn-sm pm-cancel-del" data-sku="${escapeHtml(item.sku)}">Cancel</button>
-																			`
-																			: `
-																				<button type="button" class="btn btn-sm pm-edit-btn" data-sku="${escapeHtml(item.sku)}">Edit</button>
-																				<button type="button" class="btn btn-sm pm-del-btn" data-sku="${escapeHtml(item.sku)}">Delete</button>
-																				<button type="button" class="btn btn-sm pm-scan-btn" data-sku="${escapeHtml(item.sku)}">Scan</button>
-																			`
-																	}
-																</div>
-															</td>
-														</tr>
-													`;
-													})
-													.join('')
-											: '<tr><td colspan="6" style="color:var(--muted);">No SKUs match your search.</td></tr>'
-									}
-								</tbody>
-							</table>
+						<div class="dash-filters" role="group" aria-label="Filter catalog status">
+							<button type="button" class="chip pm-status-chip ${state.statusFilter === 'all' ? 'active' : ''}" data-status="all">All (${state.products.length})</button>
+							<button type="button" class="chip pm-status-chip ${state.statusFilter === 'low' ? 'active' : ''}" data-status="low">Low Stock (${lowCount})</button>
+							<button type="button" class="chip pm-status-chip ${state.statusFilter === 'healthy' ? 'active' : ''}" data-status="healthy">Healthy (${healthyCount})</button>
 						</div>
-					</section>
-				</div>
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>SKU</th>
+									<th>Product</th>
+									<th class="num">On Hand</th>
+									<th class="num">Reorder &le;</th>
+									<th>Status</th>
+									<th>Supplier</th>
+									<th class="num">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								${
+									filtered.length
+										? filtered
+												.map((item) => {
+													const isConfirming = state.confirmDeleteSku === item.sku;
+													const isLow = item.stockCount <= item.reorderLevel;
+													return `
+													<tr class="${state.editingSku === item.sku ? 'pm-row-editing' : ''}">
+														<td><span class="sku-pill mono">${escapeHtml(item.sku)}</span></td>
+														<td><strong>${escapeHtml(item.itemName)}</strong></td>
+														<td class="num mono"><strong>${item.stockCount}</strong></td>
+														<td class="num mono">${item.reorderLevel}</td>
+														<td>
+															<span class="badge-status ${isLow ? 'low' : 'ok'}">
+																${isLow ? 'Low Stock' : 'Healthy'}
+															</span>
+														</td>
+														<td style="color:var(--muted);font-size:0.82rem;">${escapeHtml(item.supplierEmail)}</td>
+														<td class="num">
+															<div class="dash-row-actions">
+																${
+																	isConfirming
+																		? `
+																			<button type="button" class="btn btn-sm pm-btn-danger pm-confirm-del" data-sku="${escapeHtml(item.sku)}" ${state.saving ? 'disabled' : ''}>Confirm Delete</button>
+																			<button type="button" class="btn btn-sm pm-cancel-del" data-sku="${escapeHtml(item.sku)}">Cancel</button>
+																		`
+																		: `
+																			<button type="button" class="btn btn-sm pm-edit-btn" data-sku="${escapeHtml(item.sku)}">Edit</button>
+																			<button type="button" class="btn btn-sm pm-del-btn" data-sku="${escapeHtml(item.sku)}">Delete</button>
+																			<button type="button" class="btn btn-sm pm-scan-btn" data-sku="${escapeHtml(item.sku)}">Scan</button>
+																		`
+																}
+															</div>
+														</td>
+													</tr>
+												`;
+												})
+												.join('')
+										: '<tr><td colspan="7" style="color:var(--muted);">No SKUs match the selected filter.</td></tr>'
+								}
+							</tbody>
+						</table>
+					</div>
+				</section>
 			`;
 
 			updateThresholdHint();
@@ -528,6 +485,22 @@
 
 			const refreshEl = container.querySelector('#pmRefreshBtn');
 			if (refreshEl) refreshEl.addEventListener('click', () => load(false));
+
+			const goAddEl = container.querySelector('#pmGoAddSkuBtn');
+			if (goAddEl) {
+				goAddEl.addEventListener('click', () => {
+					if (typeof onRequestAddSku === 'function') {
+						onRequestAddSku();
+					}
+				});
+			}
+
+			container.querySelectorAll('.pm-status-chip').forEach((chip) => {
+				chip.addEventListener('click', () => {
+					state.statusFilter = chip.dataset.status || 'all';
+					render();
+				});
+			});
 
 			const cancelEditEl = container.querySelector('#pmCancelEditBtn');
 			if (cancelEditEl) {

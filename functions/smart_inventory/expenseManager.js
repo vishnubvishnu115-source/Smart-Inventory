@@ -237,6 +237,7 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 		currency_id: String(currencyId),
 		date: date,
 		merchant_name: merchantName,
+		payment_mode: expensePayload.payment_mode || 'Cash',
 		line_items: [
 			{
 				amount: amount,
@@ -245,6 +246,9 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 			}
 		]
 	};
+	if (expensePayload.reference_number) {
+		zohoPayload.reference_number = String(expensePayload.reference_number).trim();
+	}
 
 	const url = `${cachedBaseUrl}/expenses`;
 	const response = await fetch(url, {
@@ -281,11 +285,11 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 			currency_id: String(exp.currency_id || currencyId || ''),
 			status: String(exp.status || 'unreported'),
 			description: String(exp.description || description || ''),
-			paid_through_account_name: String(exp.paid_through_account_name || 'Petty Cash'),
-			payment_mode: String(exp.payment_mode || 'Cash'),
-			reference_number: String(exp.reference_number || ''),
-			user_name: String(exp.user_name || ''),
-			user_email: String(exp.user_email || ''),
+			paid_through_account_name: String(exp.paid_through_account_name || expensePayload.paid_through_account_name || 'Petty Cash'),
+			payment_mode: String(exp.payment_mode || expensePayload.payment_mode || 'Cash'),
+			reference_number: String(exp.reference_number || expensePayload.reference_number || ''),
+			user_name: String(exp.user_name || expensePayload.user_name || ''),
+			user_email: String(exp.user_email || expensePayload.user_email || ''),
 			report_name: String(exp.report_name || ''),
 			report_id: String(exp.report_id || '')
 		});

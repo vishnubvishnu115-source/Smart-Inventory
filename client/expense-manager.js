@@ -191,6 +191,8 @@
 				return true;
 			});
 
+			const currentUser = getCurrentUser ? getCurrentUser() : null;
+
 			let html = `
 				<div style="display: flex; flex-direction: column; gap: 20px;">
 					<!-- KPI Row -->
@@ -216,21 +218,22 @@
 						</div>
 
 						<div class="kpi-card">
-							<div class="kpi-label">Connection Status</div>
+							<div class="kpi-label">Connection & Storage</div>
 							<div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
 								<span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ok);"></span>
-								<span style="font-size: 0.95rem; font-weight: 700; color: var(--ok-ink);">Connected</span>
+								<span style="font-size: 0.95rem; font-weight: 700; color: var(--ok-ink);">Connected &amp; Mirrored</span>
 							</div>
-							<div class="kpi-sub">OAuth Link: expense &middot; DC: .in</div>
+							<div class="kpi-sub">Zoho API &middot; Catalyst Data Store (Expenses)</div>
 						</div>
 					</div>
 
 					<!-- Toolbar & Table Card -->
 					<div class="panel">
 						<div class="panel-head" style="flex-wrap: wrap; gap: 12px;">
-							<div style="display: flex; align-items: center; gap: 10px;">
+							<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
 								<h3 class="panel-title">Expense Ledger</h3>
 								<span class="panel-meta">${filteredExpenses.length} Records</span>
+								<span class="badge badge-success" style="font-size: 0.72rem; padding: 2px 8px;">Dual Synced: Zoho + Data Store</span>
 							</div>
 
 							<!-- Category & Status Filters -->
@@ -242,7 +245,7 @@
 									`).join('')}
 								</select>
 
-								<button type="button" class="btn btn-secondary btn-sm" id="btnRefreshExpenses" title="Sync with Zoho Expense">
+								<button type="button" class="btn btn-secondary btn-sm" id="btnRefreshExpenses" title="Sync with Zoho Expense and Data Store">
 									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
 									<span>Sync</span>
 								</button>
@@ -257,18 +260,19 @@
 							<table>
 								<thead>
 									<tr>
-										<th>Date</th>
+										<th>Date &amp; Ref</th>
 										<th>Merchant / Payee</th>
-										<th>Category</th>
-										<th>Status</th>
+										<th>Category &amp; Payment</th>
+										<th>Submitter</th>
+										<th>Status &amp; Storage</th>
 										<th class="num">Amount</th>
 									</tr>
 								</thead>
 								<tbody>
 									${filteredExpenses.length === 0 ? `
 										<tr>
-											<td colspan="5" style="padding: 40px; text-align: center; color: var(--muted); font-size: 0.85rem;">
-												No expenses recorded yet. Click <strong>Record Expense</strong> to create your first entry in Zoho Expense.
+											<td colspan="6" style="padding: 40px; text-align: center; color: var(--muted); font-size: 0.85rem;">
+												No expenses recorded yet. Click <strong>Record Expense</strong> to create your first entry.
 											</td>
 										</tr>
 									` : filteredExpenses.map((exp) => {
@@ -278,22 +282,44 @@
 											: stat === 'rejected'
 											? 'badge-danger'
 											: 'badge-info';
+										const refNum = exp.reference_number ? String(exp.reference_number).trim() : '';
+										const paymentMode = exp.payment_mode || 'Cash';
+										const paidThrough = exp.paid_through_account_name || 'Petty Cash';
+										const submitter = exp.user_name || exp.created_by_name || 'Operator';
+										const expenseDate = exp.date || exp.expense_date || '-';
+
 										return `
 											<tr>
-												<td class="mono" style="font-size: 0.82rem;">${escapeHtml(exp.date || '-')}</td>
+												<td class="mono" style="font-size: 0.82rem; white-space: nowrap;">
+													<div>${escapeHtml(expenseDate)}</div>
+													${refNum ? `<span class="badge badge-neutral" style="font-size: 0.68rem; margin-top: 3px; display: inline-block;">${escapeHtml(refNum)}</span>` : ''}
+												</td>
 												<td>
-													<strong style="color: var(--ink);">${escapeHtml(exp.merchant_name || exp.description || 'Expense Item')}</strong>
+													<strong style="color: var(--ink);">${escapeHtml(exp.merchant_name || exp.description || 'Inventory Expense')}</strong>
 													${exp.description && exp.merchant_name && exp.description !== exp.merchant_name ? `
 														<div style="font-size: 0.76rem; color: var(--muted); margin-top: 2px;">${escapeHtml(exp.description)}</div>
 													` : ''}
 												</td>
 												<td>
 													<span class="badge badge-neutral">${escapeHtml(exp.category_name || '-')}</span>
+													<div style="font-size: 0.74rem; color: var(--muted); margin-top: 3px;">
+														${escapeHtml(paymentMode)} &middot; <span style="opacity: 0.85;">${escapeHtml(paidThrough)}</span>
+													</div>
+												</td>
+												<td style="font-size: 0.82rem; color: var(--ink);">
+													<div style="font-weight: 600;">${escapeHtml(submitter)}</div>
+													<div style="font-size: 0.72rem; color: var(--muted);">${escapeHtml(exp.user_email || '')}</div>
 												</td>
 												<td>
-													<span class="badge ${statusClass}" style="text-transform: capitalize;">${escapeHtml(exp.status || 'unreported')}</span>
+													<div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start;">
+														<span class="badge ${statusClass}" style="text-transform: capitalize;">${escapeHtml(exp.status || 'unreported')}</span>
+														<span style="font-size: 0.68rem; color: var(--ok-ink); font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+															<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+															Data Store
+														</span>
+													</div>
 												</td>
-												<td class="num" style="font-weight: 700; color: var(--ink); font-size: 0.9rem;">
+												<td class="num" style="font-weight: 700; color: var(--ink); font-size: 0.92rem; white-space: nowrap;">
 													${formatCurrency(exp.total || exp.amount, exp.currency_code)}
 												</td>
 											</tr>
@@ -308,71 +334,116 @@
 				<!-- Record Expense Modal -->
 				${state.showAddModal ? `
 					<div class="auth-modal-backdrop active" id="addExpenseBackdrop" style="z-index: 9999;">
-						<div class="auth-modal-dialog" style="max-width: 500px;">
+						<div class="auth-modal-dialog" style="max-width: 540px;">
 							<button type="button" class="auth-modal-close" id="btnCloseAddExpense" aria-label="Close dialog">&times;</button>
 
 							<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
 								<div style="width: 28px; height: 28px; border-radius: 7px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: #fff;">
 									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
 								</div>
-								<span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary);">Zoho Expense Sync</span>
+								<span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary);">Zoho + Catalyst Data Store Sync</span>
 							</div>
 							<h3 style="margin: 0 0 4px; font-size: 1.3rem; font-weight: 800; color: var(--ink);">Record Inventory Expense</h3>
-							<p style="font-size: 0.82rem; color: var(--muted); margin: 0 0 18px;">Direct entry synchronized to Zoho Expense organization <strong>${escapeHtml(state.organizations[0]?.name || 'SIM')}</strong>.</p>
+							<p style="font-size: 0.82rem; color: var(--muted); margin: 0 0 14px;">Direct entry synchronized to Zoho Expense and mirrored into Catalyst Data Store (<code>Expenses</code> table).</p>
+
+							<!-- Autoload Badges Banner -->
+							<div style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; font-size: 0.78rem;">
+								<div style="font-weight: 700; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+									Autoloaded Context
+								</div>
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: var(--muted);">
+									<div>&bull; Operator: <strong style="color:var(--ink);">${escapeHtml(currentUser ? (currentUser.fullName || currentUser.username) : 'Active User')}</strong></div>
+									<div>&bull; Currency: <strong style="color:var(--ink);">INR (₹)</strong></div>
+									<div>&bull; Initial Status: <strong style="color:var(--ink);">Unreported</strong></div>
+									<div>&bull; Org: <strong style="color:var(--ink);">${escapeHtml(state.organizations[0]?.name || 'SIM')}</strong></div>
+								</div>
+							</div>
 
 							<form id="formRecordExpense">
 								<div style="display: flex; flex-direction: column; gap: 14px;">
 									<div>
 										<div class="field-label">
-											<label for="expMerchant">Merchant / Supplier</label>
-											<span class="field-hint">Payee name</span>
+											<label for="expMerchant">Merchant / Supplier *</label>
+											<span class="field-hint">Payee or supplier</span>
 										</div>
-										<input type="text" id="expMerchant" class="input-control" placeholder="e.g. Acme Supplies, FastFreight Logistics" required />
+										<input type="text" id="expMerchant" class="input-control" placeholder="e.g. Acme Hardware, FastFreight Logistics" required />
 									</div>
 
 									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 										<div>
 											<div class="field-label">
-												<label for="expAmount">Amount (₹ INR)</label>
+												<label for="expAmount">Amount (₹ INR) *</label>
 											</div>
 											<input type="number" step="0.01" min="0.01" id="expAmount" class="input-control" placeholder="0.00" required />
 										</div>
 										<div>
 											<div class="field-label">
-												<label for="expDate">Date</label>
+												<label for="expDate">Date *</label>
 											</div>
 											<input type="date" id="expDate" class="input-control" value="${new Date().toISOString().slice(0, 10)}" required />
 										</div>
 									</div>
 
-									<div>
-										<div class="field-label">
-											<label for="expCategory">Expense Category</label>
-											<span class="field-hint">Zoho Expense</span>
+									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+										<div>
+											<div class="field-label">
+												<label for="expCategory">Category *</label>
+											</div>
+											<select id="expCategory" class="input-control">
+												${state.categories.length > 0 ? state.categories.map((c) => `
+													<option value="${escapeHtml(c.category_id)}">${escapeHtml(c.category_name)}</option>
+												`).join('') : `
+													<option value="4190897000000034311">Inventory Restock &amp; Purchase</option>
+													<option value="4190897000000038004">Freight &amp; Shipping Logistics</option>
+													<option value="4190897000000039004">Packaging &amp; Barcode Supplies</option>
+												`}
+											</select>
 										</div>
-										<select id="expCategory" class="input-control">
-											${state.categories.length > 0 ? state.categories.map((c) => `
-												<option value="${escapeHtml(c.category_id)}">${escapeHtml(c.category_name)}</option>
-											`).join('') : `
-												<option value="4190897000000034311">Inventory Restock &amp; Purchase</option>
-												<option value="4190897000000038004">Freight &amp; Shipping Logistics</option>
-												<option value="4190897000000039004">Packaging &amp; Barcode Supplies</option>
-											`}
-										</select>
+										<div>
+											<div class="field-label">
+												<label for="expRefNumber">PO / Ref Number</label>
+												<span class="field-hint">Optional</span>
+											</div>
+											<input type="text" id="expRefNumber" class="input-control" placeholder="e.g. PO-2026-1102" />
+										</div>
+									</div>
+
+									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+										<div>
+											<div class="field-label">
+												<label for="expPaymentMode">Payment Mode</label>
+											</div>
+											<select id="expPaymentMode" class="input-control">
+												<option value="Cash" selected>Cash</option>
+												<option value="Card">Corporate Card</option>
+												<option value="UPI">UPI Transfer</option>
+												<option value="Net Banking">Net Banking / NEFT</option>
+											</select>
+										</div>
+										<div>
+											<div class="field-label">
+												<label for="expPaidThrough">Paid Through</label>
+											</div>
+											<select id="expPaidThrough" class="input-control">
+												<option value="Petty Cash" selected>Petty Cash</option>
+												<option value="Employee Reimbursements">Employee Reimbursements</option>
+											</select>
+										</div>
 									</div>
 
 									<div>
 										<div class="field-label">
-											<label for="expDescription">Notes / Inventory Ref</label>
+											<label for="expDescription">Notes / Restock Details</label>
 											<span class="field-hint">Optional</span>
 										</div>
-										<textarea id="expDescription" class="input-control" rows="2" placeholder="e.g. PO-2026-1102 restock batch, shipment fee, labels"></textarea>
+										<textarea id="expDescription" class="input-control" rows="2" placeholder="e.g. Restock batch for SKU 401, express courier handling"></textarea>
 									</div>
 
 									<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--border);">
 										<button type="button" class="btn btn-secondary" id="btnCancelAddExpense">Cancel</button>
-										<button type="submit" class="btn btn-primary" ${state.isSubmitting ? 'disabled' : ''} style="min-width: 140px;">
-											${state.isSubmitting ? 'Saving to Zoho...' : 'Save Expense'}
+										<button type="submit" class="btn btn-primary" ${state.isSubmitting ? 'disabled' : ''} style="min-width: 160px;">
+											${state.isSubmitting ? 'Saving Everywhere...' : 'Save & Mirror Expense'}
 										</button>
 									</div>
 								</div>
@@ -438,6 +509,10 @@
 					const date = form.querySelector('#expDate').value;
 					const categoryId = form.querySelector('#expCategory').value;
 					const description = form.querySelector('#expDescription').value.trim();
+					const refNumber = form.querySelector('#expRefNumber')?.value.trim() || '';
+					const paymentMode = form.querySelector('#expPaymentMode')?.value || 'Cash';
+					const paidThrough = form.querySelector('#expPaidThrough')?.value || 'Petty Cash';
+					const user = getCurrentUser ? getCurrentUser() : null;
 
 					submitNewExpense({
 						merchant_name: merchant,
@@ -445,6 +520,11 @@
 						date: date,
 						category_id: categoryId || undefined,
 						description: description,
+						reference_number: refNumber,
+						payment_mode: paymentMode,
+						paid_through_account_name: paidThrough,
+						user_name: user ? (user.fullName || user.username) : 'Operator',
+						user_email: user ? (user.email || '') : '',
 						currency_id: state.summary?.currency_id || '4190897000000000064'
 					});
 				});

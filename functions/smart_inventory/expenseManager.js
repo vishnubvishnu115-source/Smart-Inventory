@@ -262,6 +262,7 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 	});
 
 	const data = await response.json();
+	console.log('Zoho POST /expenses returned:', JSON.stringify(data));
 	if (!response.ok || data.code !== 0) {
 		return {
 			error: data.message || `Failed to create expense: HTTP ${response.status}`,
@@ -270,14 +271,15 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 		};
 	}
 
+	const exp = data.expense || (Array.isArray(data.expenses) ? data.expenses[0] : null) || {};
+
 	// Mirror newly created expense into Catalyst Data Store 'Expenses' table
 	try {
-		const exp = data.expense || {};
 		const table = catalystApp.datastore().table('Expenses');
-		await table.insertRow({
-			expense_id: String(exp.expense_id || ''),
+		const rowToInsert = {
+			expense_id: String(exp.expense_id || ('exp_' + Date.now())),
 			expense_date: exp.date || date,
-			amount: Number(exp.amount || amount || 0),
+			amount: Number(exp.amount || exp.total || amount || 0),
 			merchant_name: String(exp.merchant_name || merchantName || ''),
 			category_name: String(exp.category_name || ''),
 			category_id: String(exp.category_id || categoryId || ''),
@@ -292,14 +294,16 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 			user_email: String(exp.user_email || expensePayload.user_email || ''),
 			report_name: String(exp.report_name || ''),
 			report_id: String(exp.report_id || '')
-		});
+		};
+		const insertedRow = await table.insertRow(rowToInsert);
+		console.log('Successfully mirrored expense to Data Store:', insertedRow.ROWID);
 	} catch (dbErr) {
-		console.warn('Could not mirror expense into Catalyst Data Store Expenses table:', dbErr.message);
+		console.error('Could not mirror expense into Catalyst Data Store Expenses table:', dbErr.message);
 	}
 
 	return {
 		ok: true,
-		expense: data.expense,
+		expense: exp,
 		message: 'Expense created successfully'
 	};
 }

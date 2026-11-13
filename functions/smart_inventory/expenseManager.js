@@ -213,10 +213,22 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 		currencyId = cachedCurrencyId || '4190897000000000064';
 	}
 
-	const amount = Number(expensePayload.amount || 0);
-	const date = expensePayload.date || new Date().toISOString().slice(0, 10);
-	const merchantName = (expensePayload.merchant_name || expensePayload.merchant || 'Inventory Supplier').trim();
-	const description = (expensePayload.description || expensePayload.notes || `Inventory Purchase - ${merchantName}`).trim();
+	// Support both direct expense inputs and Zoho Books/Inventory Bill webhooks
+	const amount = Number(expensePayload.amount ?? expensePayload.total_amount ?? expensePayload.total ?? 0);
+	const date = expensePayload.date || expensePayload.bill_date || expensePayload.expense_date || new Date().toISOString().slice(0, 10);
+	const merchantName = (expensePayload.merchant_name || expensePayload.vendor_name || expensePayload.merchant || 'Inventory Supplier').trim();
+	const referenceNumber = String(expensePayload.reference_number || expensePayload.bill_number || expensePayload.bill_id || '').trim();
+
+	let description = (expensePayload.description || expensePayload.notes || '').trim();
+	if (!description && expensePayload.bill_number) {
+		description = `Bill #${expensePayload.bill_number} from ${merchantName}`;
+	}
+	if (!description && Array.isArray(expensePayload.expenses) && expensePayload.expenses.length > 0) {
+		description = expensePayload.expenses.map(e => e.description || e.account_name).filter(Boolean).join(', ');
+	}
+	if (!description) {
+		description = `Inventory Purchase - ${merchantName}`;
+	}
 
 	// 2. Resolve category ID
 	let categoryId = expensePayload.category_id;
@@ -232,22 +244,35 @@ async function createExpense(catalystApp, expensePayload, explicitOrgId) {
 		categoryId = cachedDefaultCategoryId;
 	}
 
-	// 3. Build payload according to Zoho Expense API requirements
-	const zohoPayload = {
-		currency_id: String(currencyId),
-		date: date,
-		merchant_name: merchantName,
-		payment_mode: expensePayload.payment_mode || 'Cash',
-		line_items: [
+	// 3. Build line items (supporting bill line items if passed)
+	const rawLineItems = Array.isArray(expensePayload.expenses) && expensePayload.expenses.length > 0
+		? expensePayload.expenses
+		: (Array.isArray(expensePayload.line_items) ? expensePayload.line_items : null);
+
+	const formattedLineItems = rawLineItems && rawLineItems.length > 0
+		? rawLineItems.map(item => ({
+			amount: Number(item.amount ?? item.item_total ?? (amount / rawLineItems.length)),
+			category_id: categoryId,
+			description: String(item.description || item.account_name || description)
+		}))
+		: [
 			{
 				amount: amount,
 				category_id: categoryId,
 				description: description || `Inventory item: ${merchantName}`
 			}
-		]
+		];
+
+	// 4. Build payload according to Zoho Expense API requirements
+	const zohoPayload = {
+		currency_id: String(currencyId),
+		date: date,
+		merchant_name: merchantName,
+		payment_mode: expensePayload.payment_mode || 'Cash',
+		line_items: formattedLineItems
 	};
-	if (expensePayload.reference_number) {
-		zohoPayload.reference_number = String(expensePayload.reference_number).trim();
+	if (referenceNumber) {
+		zohoPayload.reference_number = referenceNumber;
 	}
 
 	const url = `${cachedBaseUrl}/expenses`;
